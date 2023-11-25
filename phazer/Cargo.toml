@@ -1,0 +1,19 @@
+[package]
+name = "phazer"
+version = "0.1.0"
+authors = ["Brian Cook (a.k.a Coding-Badly)"]
+license = "Apache-2.0 OR MIT"
+readme = "../README.md"
+repository = "https://github.com/Coding-Badly/phazer"
+documentation = "https://docs.rs/phazer"
+# homepage = "https://phazer.github.io/book"
+description = """
+Two-phase commit for file creation.
+"""
+keywords = ["file", "utility", "windows", "linux", "unix"]
+categories = ["algorithms", "concurrency", "configuration", "filesystem"]
+edition = "2021"
+# rust-version = "1.56"
+# include = ["src/", "LICENSE-*", "README.md", "CHANGELOG.md", "COPYRIGHT"]
+
+[dependencies]
