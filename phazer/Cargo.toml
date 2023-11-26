@@ -11,9 +11,12 @@ description = """
 Two-phase commit for file creation.
 """
 keywords = ["file", "utility", "windows", "linux", "unix"]
-categories = ["algorithms", "concurrency", "configuration", "filesystem"]
+categories = ["algorithms", "concurrency", "config", "filesystem"]
 edition = "2021"
 # rust-version = "1.56"
 # include = ["src/", "LICENSE-*", "README.md", "CHANGELOG.md", "COPYRIGHT"]
 
 [dependencies]
+
+[features]
+simple = []
