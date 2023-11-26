@@ -16,25 +16,21 @@
 use crate::Phazer;
 
 use std::fs::{File, OpenOptions};
+use std::io::{Read, Seek, Write};
 use std::marker::PhantomData;
-use std::io::{Seek, Read, Write};
 
 impl Phazer {
     /// Returns a synchronous file-like thing that's used to build the working file.
-    /// 
+    ///
     /// This method is available when then `simple` feature is enabled.
     pub fn simple_writer<'a>(&'a self) -> std::io::Result<SimplePhazerWriter> {
         let mut options = OpenOptions::new();
         // Always allow read / write
-        options
-            .read(true)
-            .write(true);
+        options.read(true).write(true);
         // First pass?  Create and truncate.
         if !self.file_created.get() {
             self.file_created.set(true);
-            options
-                .truncate(true)
-                .create(true);
+            options.truncate(true).create(true);
         };
         // Try to open / create the file
         let phase1 = options.open(&self.working_path)?;
@@ -45,12 +41,11 @@ impl Phazer {
     }
 }
 
-
 /// SimplePhazerWriter is a synchronous file-like thing that's used to build the working file.
-/// 
-/// It maintains a reference the the Phazer used to construct it ensuring Phazer::commit cannot be
-/// called if there are any potential writers.
-/// 
+///
+/// It maintains a reference to the Phazer used to construct it, ensuring Phazer::commit cannot be
+/// called if there are any writers.
+///
 /// This struct is available when the `simple` feature is enabled.
 pub struct SimplePhazerWriter<'a> {
     phase1: File,

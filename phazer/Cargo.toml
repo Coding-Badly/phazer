@@ -1,6 +1,6 @@
 [package]
 name = "phazer"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Brian Cook (a.k.a Coding-Badly)"]
 license = "Apache-2.0 OR MIT"
 readme = "../README.md"
@@ -17,6 +17,21 @@ edition = "2021"
 # include = ["src/", "LICENSE-*", "README.md", "CHANGELOG.md", "COPYRIGHT"]
 
 [dependencies]
+tokio = { version = "1", features = ["fs"], optional = true }
+
+[dev-dependencies]
+futures-util = { version = "0.3.29" }
+reqwest = { version = "0.11.22", features = ["stream"] }
+tokio = { version = "1", features = ["full"] }
+url = { version = "2.5.0" }
 
 [features]
+#default = ["tokio"]
+#default = []
 simple = []
+
+# Taken from a stackoverflow post that took it from tokio.
+[package.metadata.docs.rs]
+all-features = true
+# Include when it makes a difference.
+# rustdoc-args = ["--cfg", "docsrs"]

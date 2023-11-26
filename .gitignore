@@ -1,3 +1,6 @@
 Cargo.lock
+.vscode/
+downloads/
+fuffing/
 local/
 target/
