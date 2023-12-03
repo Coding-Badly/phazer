@@ -58,8 +58,66 @@ mod tokio_writer;
 #[cfg(any(feature = "simple", feature = "tokio"))]
 use std::cell::Cell;
 use std::fs::{remove_file, rename};
+// rmv use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+pub enum RetryStrategyAction {
+    ReturnError,
+    TryAgain,
+}
+
+pub trait RetryStrategy {
+    fn before_commit(&mut self);
+    fn handle_error(&mut self, tries: i32) -> RetryStrategyAction;
+}
+
+pub struct Never {}
+
+impl Default for Never {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+impl RetryStrategy for Never {
+    fn before_commit(&mut self) {}
+    fn handle_error(&mut self, _tries: i32) -> RetryStrategyAction {
+        RetryStrategyAction::ReturnError
+    }
+}
+
+pub struct ThreeTries {}
+
+impl ThreeTries {
+    #[cfg(not(feature = "tokio"))]
+    fn short_nap(tries: i32) {
+        std::thread::sleep(std::time::Duration::from_millis(tries as u64 * 125));
+    }
+}
+
+impl Default for ThreeTries {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+impl RetryStrategy for ThreeTries {
+    fn before_commit(&mut self) {}
+    fn handle_error(&mut self, tries: i32) -> RetryStrategyAction {
+        if tries > 3 {
+            return RetryStrategyAction::ReturnError;
+        }
+        Self::short_nap(tries);
+        RetryStrategyAction::TryAgain
+    }
+}
+
+// rmv pub enum RetryStrategyRmv  {
+// rmv     Never,
+// rmv     Repeat,
+// rmv     ForgeAhead,
+// rmv }
 
 /// Phazer is the entry point into this crate.
 ///
@@ -69,17 +127,77 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 pub struct Phazer {
     #[cfg(any(feature = "simple", feature = "tokio"))]
     file_created: Cell<bool>,
-    working_path: PathBuf,
+    commit_tried: bool,
+    last_commit_error: Option<std::io::Error>,
+    retry_strategy: Box<dyn RetryStrategy>,
+    // rmv retry_strategy_rmv: RetryStrategyRmv,
     target_path: PathBuf,
+    working_path: PathBuf,
 }
 
 impl Phazer {
     /// Create a Phazer where `path` is the target / destination file.
-    pub fn new<P>(path: P) -> Self
+    pub fn new<P>(path: P, retry_strategy: impl RetryStrategy + 'static) -> Self
     where
         P: Into<PathBuf>,
     {
-        let target_path = path.into();
+        Self::init(path.into(), Box::new(retry_strategy))
+    }
+    /// `commit` renames the working file so it becomes the target file.
+    ///
+    /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
+    pub fn commit(mut self) -> Result<(), Self> {
+        self.commit_tried = true;
+        self.last_commit_error = None;
+        let mut tries = 0;
+        self.retry_strategy.before_commit();
+        loop {
+            tries += 1;
+            match self.internal_commit() {
+                Ok(()) => return Ok(()),
+                Err(e) => {
+                    if self.last_commit_error.is_none() {
+                        self.last_commit_error = Some(e);
+                    }
+                }
+            }
+            match self.retry_strategy.handle_error(tries) {
+                RetryStrategyAction::ReturnError => return Err(self),
+                RetryStrategyAction::TryAgain => {}
+            }
+            // rmv match self.retry_strategy_rmv {
+            // rmv     RetryStrategyRmv::Never => return Err(self),
+            // rmv     RetryStrategyRmv::Repeat => {
+            // rmv         if tries >= 3 {
+            // rmv             return Err(self);
+            // rmv         }
+            // rmv         Self::short_nap(tries);
+            // rmv     }
+            // rmv     RetryStrategyRmv::ForgeAhead => {
+            // rmv         // nfx: Try a two-phase commit.
+            // rmv     }
+            // rmv }
+        }
+        /* rmv
+        Ok(())
+        match rename(&self.working_path, &self.target_path) {
+            Ok(()) => {}
+            Err(e) => {
+                if e.kind() != ErrorKind::PermissionDenied {
+                    return Err(e);
+                }
+                let _ = remove_file(&self.target_path);
+                match rename(&self.working_path, &self.target_path) {
+                    Ok(()) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+            }
+        }
+        */
+    }
+    fn init(target_path: PathBuf, retry_strategy: Box<dyn RetryStrategy>) -> Self {
         let phazer_id = current_phazer_id();
         let process_id = std::process::id();
         let working_ext = if let Some(ext) = target_path.extension() {
@@ -97,17 +215,24 @@ impl Phazer {
         Self {
             #[cfg(any(feature = "simple", feature = "tokio"))]
             file_created: Cell::new(false),
+            commit_tried: false,
+            last_commit_error: None,
+            retry_strategy,
+            // rmv retry_strategy_rmv: RetryStrategyRmv::Never,
             target_path,
             working_path,
         }
     }
-    /// `commit` renames the working file so it becomes the target file.
-    ///
-    /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
-    pub fn commit(self) -> std::io::Result<()> {
-        rename(&self.working_path, &self.target_path)?;
-        Ok(())
+    fn internal_commit(&self) -> std::io::Result<()> {
+        rename(&self.working_path, &self.target_path)
     }
+    // rmv pub fn retry_strategy(&mut self, value: RetryStrategyRmv) {
+    // rmv     self.retry_strategy_rmv = value;
+    // rmv }
+    // rmv #[cfg(not(feature = "tokio"))]
+    // rmv fn short_nap(tries: i32) {
+    // rmv     std::thread::sleep(std::time::Duration::from_millis(tries as u64*125));
+    // rmv }
 }
 
 impl Drop for Phazer {
@@ -116,6 +241,40 @@ impl Drop for Phazer {
         let _ = remove_file(&self.working_path);
     }
 }
+
+impl std::fmt::Debug for Phazer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Phazer")
+            .field("target_path", &self.target_path)
+            .field("working_path", &self.working_path)
+            .field("last_commit_error", &self.last_commit_error)
+            .finish()
+    }
+}
+
+impl std::fmt::Display for Phazer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = if let Some(lce) = &self.last_commit_error {
+            format!(
+                "last commit for {} failed with error: {}",
+                self.target_path.display(),
+                lce
+            )
+        } else {
+            if self.commit_tried {
+                format!("commit for {} was successful", self.target_path.display())
+            } else {
+                format!(
+                    "commit for {} has not yet been attempted",
+                    self.target_path.display()
+                )
+            }
+        };
+        f.write_str(&text)
+    }
+}
+
+impl std::error::Error for Phazer {}
 
 // Return a serial number for this application to ensure the working filename is unique.
 fn current_phazer_id() -> usize {
