@@ -135,6 +135,13 @@ pub struct Phazer {
     working_path: PathBuf,
 }
 
+// rmv type c_long = i32;
+// rmv type LONG = c_long;
+// rmv type NTSTATUS = LONG;
+// rmv extern "system" {
+// rmv     fn RtlGetLastNtStatus() -> NTSTATUS;
+// rmv }
+
 impl Phazer {
     /// Create a Phazer where `path` is the target / destination file.
     pub fn new<P>(path: P, retry_strategy: impl RetryStrategy + 'static) -> Self
@@ -224,7 +231,12 @@ impl Phazer {
         }
     }
     fn internal_commit(&self) -> std::io::Result<()> {
-        rename(&self.working_path, &self.target_path)
+        let rv = rename(&self.working_path, &self.target_path);
+        // rmv let _nts = unsafe { RtlGetLastNtStatus() };
+        // STATUS_ACCESS_DENIED = -1073741790 = C0000022
+        // ...file is read-only
+        // ...file is open for reading by another thread
+        rv
     }
     // rmv pub fn retry_strategy(&mut self, value: RetryStrategyRmv) {
     // rmv     self.retry_strategy_rmv = value;
