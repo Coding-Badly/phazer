@@ -14,7 +14,7 @@
 
 //! Imagine, if you will, that you are building an application that downloads a file from a website.
 //! Let's say that the application is downloading the baby name data from the U.S. Social Security
-//! Administration (https://www.ssa.gov/oact/babynames/names.zip).  
+//! Administration (https://www.ssa.gov/oact/babynames/names.zip).
 //!
 //! A common failure when getting data from the internet is an interrupted download.  Unless
 //! precautions are taken the file ends up truncated (essentially corrupt).  That would result in a
@@ -57,7 +57,7 @@ mod tokio_writer;
 
 #[cfg(any(feature = "simple", feature = "tokio"))]
 use std::cell::Cell;
-use std::fs::{remove_file, rename};
+use std::fs::remove_file;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -105,8 +105,34 @@ impl Phazer {
     ///
     /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
     pub fn commit(self) -> std::io::Result<()> {
-        rename(&self.working_path, &self.target_path)?;
-        Ok(())
+        #[cfg(target_os="windows")]
+        {
+            use std::ptr::null;
+
+            use windows_sys::Win32::Foundation::TRUE;
+            use windows_sys::Win32::Storage::FileSystem::ReplaceFileW;
+
+            use grob::WindowsPathString;
+
+            let rv = unsafe { ReplaceFileW(
+                WindowsPathString::new(self.target_path.as_os_str())?.as_wide(),
+                WindowsPathString::new(&self.working_path.as_os_str())?.as_wide(),
+                null(),
+                0,
+                null(),
+                null(),
+            ) };
+            if rv == TRUE {
+                Ok(())
+            } else {
+                Err(std::io::Error::last_os_error())
+            }
+        }
+        #[cfg(not(target_os="windows"))]
+        {
+            use std::fs::rename;
+            rename(&self.working_path, &self.target_path)
+        }
     }
 }
 
