@@ -57,9 +57,12 @@ mod tokio_writer;
 
 #[cfg(any(feature = "simple", feature = "tokio"))]
 use std::cell::Cell;
-use std::fs::{metadata, remove_file, set_permissions};
+use std::fs::remove_file;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[cfg(target_os="windows")]
+use std::fs::{metadata, remove_file, set_permissions};
 
 /// Phazer is the entry point into this crate.
 ///
