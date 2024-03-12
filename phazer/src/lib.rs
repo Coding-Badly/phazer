@@ -57,7 +57,7 @@ mod tokio_writer;
 
 #[cfg(any(feature = "simple", feature = "tokio"))]
 use std::cell::Cell;
-use std::fs::remove_file;
+use std::fs::{metadata, remove_file, set_permissions};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -114,7 +114,9 @@ impl Phazer {
 
             use grob::WindowsPathString;
 
-            let rv = unsafe { ReplaceFileW(
+            let was_readonly = self.adjust_readonly(false).unwrap_or(false);
+
+            let rfrv = unsafe { ReplaceFileW(
                 WindowsPathString::new(self.target_path.as_os_str())?.as_wide(),
                 WindowsPathString::new(&self.working_path.as_os_str())?.as_wide(),
                 null(),
@@ -122,11 +124,15 @@ impl Phazer {
                 null(),
                 null(),
             ) };
-            if rv == TRUE {
+            let rv = if rfrv == TRUE {
                 Ok(())
             } else {
                 Err(std::io::Error::last_os_error())
+            };
+            if was_readonly {
+                let _ = self.adjust_readonly(true);
             }
+            rv
         }
         #[cfg(not(target_os="windows"))]
         {
@@ -134,6 +140,17 @@ impl Phazer {
             rename(&self.working_path, &self.target_path)
         }
     }
+
+    #[cfg(target_os="windows")]
+    fn adjust_readonly(&self, value: bool) -> std::io::Result<bool> {
+        let m = metadata(&self.target_path)?;
+        let mut p = m.permissions();
+        let rv = p.readonly();
+        p.set_readonly(value);
+        set_permissions(&self.target_path, p)?;
+        Ok(rv)
+    }
+
 }
 
 impl Drop for Phazer {
