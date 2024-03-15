@@ -30,6 +30,10 @@
 //! configuration file is used or the new complete configuration file is used.
 //!
 
+//trait Helper {
+//    fn create_
+//}
+
 //! The following example shows how an interrupted application avoids putting a partial file in use.
 //!
 //! ```rust
@@ -57,12 +61,12 @@ mod tokio_writer;
 
 #[cfg(any(feature = "simple", feature = "tokio"))]
 use std::cell::Cell;
-use std::fs::remove_file;
+use std::fs::{remove_file, rename};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[cfg(target_os="windows")]
-use std::fs::{metadata, remove_file, set_permissions};
+use std::fs::{metadata, set_permissions};
 
 /// Phazer is the entry point into this crate.
 ///
@@ -121,7 +125,7 @@ impl Phazer {
 
             let rfrv = unsafe { ReplaceFileW(
                 WindowsPathString::new(self.target_path.as_os_str())?.as_wide(),
-                WindowsPathString::new(&self.working_path.as_os_str())?.as_wide(),
+                WindowsPathString::new(self.working_path.as_os_str())?.as_wide(),
                 null(),
                 0,
                 null(),
@@ -130,7 +134,18 @@ impl Phazer {
             let rv = if rfrv == TRUE {
                 Ok(())
             } else {
-                Err(std::io::Error::last_os_error())
+                let error = std::io::Error::last_os_error();
+                if error.kind() != std::io::ErrorKind::NotFound {
+                    Err(error)
+                } else {
+                    // NFX: Create the file then try again to make this atomic.
+                    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+                    // lpSecurityAttributes: SECURITY_ATTRIBUTES
+                    // dwFlagsAndAttributes: DWORD
+                    // hTemplateFile: HANDLE
+
+                    rename(&self.working_path, &self.target_path)
+                }
             };
             if was_readonly {
                 let _ = self.adjust_readonly(true);
