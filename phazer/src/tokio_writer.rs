@@ -67,13 +67,16 @@ impl<'a> AsyncRead for TokioPhazerWriter<'a> {
 
 impl<'a> AsyncSeek for TokioPhazerWriter<'a> {
     fn poll_complete(
-        mut self: Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
+        mut self: Pin<&mut Self>, 
+        cx: &mut std::task::Context<'_>
     ) -> std::task::Poll<std::io::Result<u64>> {
         let mut pp: Pin<Box<&mut File>> = Pin::from(Box::new(&mut self.phase1));
         pp.as_mut().poll_complete(cx)
     }
-    fn start_seek(mut self: Pin<&mut Self>, position: std::io::SeekFrom) -> std::io::Result<()> {
+    fn start_seek(
+        mut self: Pin<&mut Self>, 
+        position: std::io::SeekFrom
+    ) -> std::io::Result<()> {
         let mut pp: Pin<Box<&mut File>> = Pin::from(Box::new(&mut self.phase1));
         pp.as_mut().start_seek(position)
     }

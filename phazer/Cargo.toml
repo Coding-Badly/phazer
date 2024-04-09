@@ -21,14 +21,13 @@ tokio = { version = "1", features = ["fs"], optional = true }
 
 [dev-dependencies]
 futures-util = { version = "0.3.29" }
-rand = { version = "0.8.5" }
 reqwest = { version = "0.11.22", features = ["stream"] }
 tokio = { version = "1", features = ["full"] }
 url = { version = "2.5.0" }
 
 [features]
 #default = ["tokio"]
-default = ["simple"]
+#default = []
 simple = []
 
 # Taken from a stackoverflow post that took it from tokio.
