@@ -103,20 +103,39 @@ mod inner {
         Ok(removed)
     }
 
+    trait IgnoreThese {
+        fn ignore(&self, kind: ErrorKind) -> bool;
+    }
+
+    fn ignore<T, I>(r: Result<T, std::io::Error>, these: I) -> Result<Option<T>, std::io::Error>
+    where
+        I: IgnoreThese,
+    {
+        match r {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => {
+                if these.ignore(e.kind()) {
+                    Ok(None)
+                } else {
+                    Err(e)
+                }
+            }
+        }
+    }
+
+    impl IgnoreThese for ErrorKind {
+        fn ignore(&self, kind: ErrorKind) -> bool {
+            *self == kind
+        }
+    }
+
     pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
 
         let mut d = PathBuf::from("downloads");
 
         println!("Creating the 'downloads' directory...");
-        match create_dir(&d).await {
-            Ok(()) => {}
-            Err(e) => {
-                if e.kind() != ErrorKind::AlreadyExists {
-                    return Err(Box::new(e));
-                }
-            }
-        }
+        ignore(create_dir(&d).await, ErrorKind::AlreadyExists)?;
 
         println!("Removing old files from the 'downloads' directory...");
         remove_old_files(&d).await?;
