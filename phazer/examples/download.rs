@@ -107,7 +107,7 @@ mod inner {
         fn ignore(&self, kind: ErrorKind) -> bool;
     }
 
-    fn ignore<T,I>(r: Result<T,std::io::Error>, these: I) -> Result<Option<T>,std::io::Error>
+    fn ignore<T, I>(r: Result<T, std::io::Error>, these: I) -> Result<Option<T>, std::io::Error>
     where
         I: IgnoreThese,
     {

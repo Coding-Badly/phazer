@@ -14,7 +14,7 @@
 
 //! Imagine, if you will, that you are building an application that downloads a file from a website.
 //! Let's say that the application is downloading the baby name data from the U.S. Social Security
-//! Administration (https://www.ssa.gov/oact/babynames/names.zip).  
+//! Administration (https://www.ssa.gov/oact/babynames/names.zip).
 //!
 //! A common failure when getting data from the internet is an interrupted download.  Unless
 //! precautions are taken the file ends up truncated (essentially corrupt).  That would result in a
@@ -107,6 +107,12 @@ impl Phazer {
     pub fn commit(self) -> std::io::Result<()> {
         rename(&self.working_path, &self.target_path)?;
         Ok(())
+    }
+    ///
+    ///
+    #[cfg(feature = "bug-001")]
+    pub fn working_path(&self) -> &Path {
+        &self.working_path.as_path()
     }
 }
 

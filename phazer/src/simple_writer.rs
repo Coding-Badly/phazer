@@ -52,6 +52,10 @@ pub struct SimplePhazerWriter<'a> {
     _parent: PhantomData<&'a Phazer>,
 }
 
+impl<'p> Drop for SimplePhazerWriter<'p> {
+    fn drop(&mut self) {}
+}
+
 impl<'a> Read for SimplePhazerWriter<'a> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         self.phase1.read(buf)
