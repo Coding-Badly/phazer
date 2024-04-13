@@ -61,42 +61,55 @@ use std::fs::{remove_file, rename};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+pub trait HasPaths {
+    fn get_working_path(&self) -> &Path;
+    fn get_target_path(&self) -> &Path;
+}
+
+pub trait CommitStrategy {
+    fn commit(&self, phazer: &dyn HasPaths) -> std::io::Result<()>;
+}
+
 /// Phazer is the entry point into this crate.
 ///
 /// One Phazer is constructed for each file that's created.  It's essentially a wrapper over the
 /// target filename.  For example, if the application downloads three files from the internet then
 /// one Phazer is created for each file.
-pub struct Phazer {
+pub struct Phazer<'cs> {
     #[cfg(any(feature = "simple", feature = "tokio"))]
     file_created: Cell<bool>,
+    commit_strategy: &'cs dyn CommitStrategy,
     working_path: PathBuf,
     target_path: PathBuf,
 }
 
-impl Phazer {
+impl<'cs> Phazer<'cs> {
     /// Create a Phazer where `path` is the target / destination file.
     pub fn new<P>(path: P) -> Self
     where
         P: Into<PathBuf>,
     {
-        let target_path = path.into();
+        Self::inner_new(path.into(), SIMPLE_RENAME_STRATEGY)
+    }
+    fn inner_new(
+        target_path: PathBuf,
+        commit_strategy: &'cs dyn CommitStrategy,
+    ) -> Phazer {
         let phazer_id = current_phazer_id();
         let process_id = std::process::id();
-        let working_ext = if let Some(ext) = target_path.extension() {
-            format!(
-                "{}.phazer-{}-{}",
-                Path::new(ext).display(),
-                process_id,
-                phazer_id
-            )
+        let lft = if let Some(ext) = target_path.extension() {
+            format!("{}.phazer-", Path::new(ext).display())
         } else {
-            format!("phazer-{}-{}", process_id, phazer_id)
+            "phazer-".into()
         };
+        let rgt = format!("-{}-{}", process_id, phazer_id);
+        let working_ext = format!("{}working{}", lft, rgt);
         let mut working_path = target_path.clone();
         working_path.set_extension(working_ext);
-        Self {
+        Phazer {
             #[cfg(any(feature = "simple", feature = "tokio"))]
             file_created: Cell::new(false),
+            commit_strategy,
             target_path,
             working_path,
         }
@@ -104,22 +117,123 @@ impl Phazer {
     /// `commit` renames the working file so it becomes the target file.
     ///
     /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
-    pub fn commit(self) -> std::io::Result<()> {
-        rename(&self.working_path, &self.target_path)?;
-        Ok(())
-    }
-    ///
-    ///
-    #[cfg(feature = "bug-001")]
-    pub fn working_path(&self) -> &Path {
-        &self.working_path.as_path()
+    pub fn commit(self) -> Result<(), (std::io::Error, Phazer<'cs>)> {
+        match self.commit_strategy.commit(&self) {
+            Ok(()) => Ok(()),
+            Err(e) => Err((e, self)),
+        }
     }
 }
 
-impl Drop for Phazer {
+impl<'cs> Drop for Phazer<'cs> {
     /// `drop` removes the working file if it still exists (if the Phazer was not committed).
     fn drop(&mut self) {
         let _ = remove_file(&self.working_path);
+    }
+}
+
+impl<'cs> HasPaths for Phazer<'cs> {
+    fn get_working_path(&self) -> &Path {
+        self.working_path.as_path()
+    }
+    fn get_target_path(&self) -> &Path {
+        self.target_path.as_path()
+    }
+}
+
+pub struct SimpleRenameStrategy {}
+
+impl CommitStrategy for SimpleRenameStrategy {
+    fn commit(&self, phazer: &dyn HasPaths) -> std::io::Result<()> {
+        rename(phazer.get_working_path(), phazer.get_target_path())
+    }
+}
+
+pub const SIMPLE_RENAME_STRATEGY: &(dyn CommitStrategy + Sync) = &SimpleRenameStrategy {};
+
+pub struct RenameWithRetryStrategy {}
+
+impl CommitStrategy for RenameWithRetryStrategy {
+    fn commit(&self, phazer: &dyn HasPaths) -> std::io::Result<()> {
+        let mut tries = 0;
+        loop {
+            tries += 1;
+            let rv = rename(phazer.get_working_path(), phazer.get_target_path());
+            match &rv {
+                Ok(()) => return rv,
+                Err(e) => {
+                    if e.kind() != std::io::ErrorKind::PermissionDenied {
+                        return rv;
+                    }
+                    // With 10 threads and the sleep code as it is below (start with 10ms), seven
+                    // has been a good threshold.
+                    if tries >= 7 {
+                        return rv;
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10*tries));
+        }
+    }
+}
+
+pub const RENAME_WITH_RETRY_STRATEGY: &(dyn CommitStrategy + Sync) = &RenameWithRetryStrategy {};
+
+pub struct PhazerBuilder<'cs> {
+    commit_strategy: Option<&'cs dyn CommitStrategy>,
+}
+
+pub struct PhazerBuilderWithPath<'cs> {
+    commit_strategy: Option<&'cs dyn CommitStrategy>,
+    target_path: PathBuf,
+}
+
+impl<'cs> PhazerBuilder<'cs> {
+    pub fn new() -> Self {
+        Self {
+            commit_strategy: None,
+        }
+    }
+    pub fn with_path<P>(path: P) -> PhazerBuilderWithPath<'cs>
+    where
+        P: Into<PathBuf>,
+    {
+        PhazerBuilderWithPath {
+            commit_strategy: None,
+            target_path: path.into(),
+        }
+    }
+    pub fn path<P>(self, value: P) -> PhazerBuilderWithPath<'cs>
+    where
+        P: Into<PathBuf>,
+    {
+        PhazerBuilderWithPath {
+            commit_strategy: self.commit_strategy,
+            target_path: value.into(),
+        }
+    }
+    pub fn strategy(mut self, value: &'cs dyn CommitStrategy) -> Self {
+        self.commit_strategy = Some(value);
+        self
+    }
+}
+
+impl<'cs> PhazerBuilderWithPath<'cs> {
+    pub fn path<P>(mut self, value: P) -> Self
+    where
+        P: Into<PathBuf>,
+    {
+        self.target_path = value.into();
+        self
+    }
+    pub fn strategy(mut self, value: &'cs dyn CommitStrategy) -> Self {
+        self.commit_strategy = Some(value);
+        self
+    }
+    pub fn build(self) -> Phazer<'cs> {
+        let Self { commit_strategy, target_path } = self;
+        let commit_strategy = commit_strategy.unwrap_or(SIMPLE_RENAME_STRATEGY);
+        Phazer::inner_new(target_path, commit_strategy)
     }
 }
 

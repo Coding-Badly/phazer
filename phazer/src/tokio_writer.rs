@@ -21,7 +21,7 @@ use std::pin::Pin;
 use tokio::fs::{File, OpenOptions};
 use tokio::io::{AsyncRead, AsyncSeek, AsyncWrite};
 
-impl Phazer {
+impl<'cs> Phazer<'cs> {
     /// Returns an asynchronous file-like thing that's used to build the working file.
     ///
     /// This method is available when then `tokio` feature is enabled.
@@ -49,12 +49,12 @@ impl Phazer {
 /// called if there are any potential writers.
 ///
 /// This struct is available when the `tokio` feature is enabled.
-pub struct TokioPhazerWriter<'a> {
+pub struct TokioPhazerWriter<'a, 'cs> {
     phase1: File,
-    _parent: PhantomData<&'a Phazer>,
+    _parent: PhantomData<&'a Phazer<'cs>>,
 }
 
-impl<'a> AsyncRead for TokioPhazerWriter<'a> {
+impl<'a, 'cs> AsyncRead for TokioPhazerWriter<'a, 'cs> {
     fn poll_read(
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
@@ -65,7 +65,7 @@ impl<'a> AsyncRead for TokioPhazerWriter<'a> {
     }
 }
 
-impl<'a> AsyncSeek for TokioPhazerWriter<'a> {
+impl<'a, 'cs> AsyncSeek for TokioPhazerWriter<'a, 'cs> {
     fn poll_complete(
         mut self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
@@ -79,7 +79,7 @@ impl<'a> AsyncSeek for TokioPhazerWriter<'a> {
     }
 }
 
-impl<'a> AsyncWrite for TokioPhazerWriter<'a> {
+impl<'a, 'cs> AsyncWrite for TokioPhazerWriter<'a, 'cs> {
     fn poll_flush(
         mut self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
