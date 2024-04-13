@@ -1,11 +1,19 @@
-# v0.1.0
+# Changelog
 
-Initial release: https://github.com/Coding-Badly/phazer
+## phazer 0.1.2 (2023-11-26)
 
-# v0.1.1
+### Added
 
-Initial release of the `simple` (synchronous) file creation helper (Phazer).
+- Initial release of the `tokio` (asynchronous) file creation helper (Phazer).
 
-# v0.1.2
+## phazer 0.1.1
 
-Initial release of the `tokio` (asynchronous) file creation helper (Phazer).
+### Added
+
+- Initial release of the `simple` (synchronous) file creation helper (Phazer).
+
+## phazer 0.1.0
+
+### Added
+
+- Initial release: https://github.com/Coding-Badly/phazer
