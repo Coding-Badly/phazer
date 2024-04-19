@@ -29,11 +29,10 @@ impl<'cs> Phazer<'cs> {
         let mut options = OpenOptions::new();
         // Always allow read / write
         options.read(true).write(true);
-        // First pass?  Create and truncate.
-        if !self.file_created.get() {
-            self.file_created.set(true);
+        // Is this the first writer?  Create and truncate.
+        if self.first_writer() {
             options.truncate(true).create(true);
-        };
+        }
         // Try to open / create the file
         let phase1 = options.open(&self.working_path).await?;
         Ok(TokioPhazerWriter {

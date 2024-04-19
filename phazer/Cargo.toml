@@ -29,6 +29,7 @@ windows-sys = { version = "0.52.0", features = ["Win32_Storage_FileSystem"] }
 [features]
 default = []
 simple = []
+test_helpers = []
 
 # Taken from a stackoverflow post that took it from tokio.
 [package.metadata.docs.rs]

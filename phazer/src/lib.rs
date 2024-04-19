@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Imagine, if you will, that you are building an application that downloads a file from a website.
-//! Let's say that the application is downloading the baby name data from the U.S. Social Security
-//! Administration (https://www.ssa.gov/oact/babynames/names.zip).
+//! Imagine, if you will, you are building an application that downloads a file from a website.
+//! Let's say the application is downloading baby name data from the U.S. Social Security
+//! Administration (<https://www.ssa.gov/oact/babynames/names.zip>).
 //!
 //! A common failure when getting data from the internet is an interrupted download.  Unless
 //! precautions are taken the file ends up truncated (essentially corrupt).  That would result in a
@@ -30,7 +30,8 @@
 //! configuration file is used or the new complete configuration file is used.
 //!
 
-//! The following example shows how an interrupted application avoids putting a partial file in use.
+//! The following example shows how an interrupted application using this crate avoids putting a
+//! partial file in use.
 //!
 //! ```rust
 //! # use std::io::Write;
@@ -43,19 +44,29 @@
 //!     let mut w = p.simple_writer()?;
 //!     writeln!(w, "[Settings]")?;
 //!     writeln!(w, "Port=1")?;
-//!     panic!("test.cfg never exists because of this panic.  Removing this line results in test.cfg being \"created\" atomically.");
+//!
+//!     // A crash here does not corrupt the "test.cfg" file because this code was not writing
+//!     // directly to "test.cfg".  If "test.cfg" did not exist before and this program crashes then
+//!     // "test.cfg" still does not exist.  If "test.cfg" did exist and this program crashes then
+//!     // the existing "test.cfg" is left untouched.
+//!     //panic!("test.cfg never exists because of this panic.  Removing this line results in test.cfg being \"created\" atomically.");
+//!
 //!     writeln!(w, "Timeout=10")?;
-//!     p.commit()?;
+//!     drop(w);
+//!     p.commit().map_err(|v| v.0)?;
 //!     Ok(())
 //! }
 //! # #[cfg(not(feature = "simple"))]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> { Ok(()) }
 //! ```
+//!
+//! The same code writing directly to the configuration file would leave a file behind that's
+//! missing the timeout setting.  The configuration file would essentially be corrupt.
+//!
 
 mod simple_writer;
 mod tokio_writer;
 
-#[cfg(any(feature = "simple", feature = "tokio"))]
 use std::cell::Cell;
 use std::fs::{remove_file, rename};
 use std::path::{Path, PathBuf};
@@ -70,13 +81,18 @@ pub trait CommitStrategy {
     fn commit(&self, phazer: &dyn HasPaths) -> std::io::Result<()>;
 }
 
-/// Phazer is the entry point into this crate.
+/// [`Phazer`] manages the transition of a working file to a target file.
 ///
-/// One Phazer is constructed for each file that's created.  It's essentially a wrapper over the
-/// target filename.  For example, if the application downloads three files from the internet then
-/// one Phazer is created for each file.
+/// [`Phazer`] is the core component of this crate.  One [`Phazer`] is constructed for each target
+/// file.  It's essentially a wrapper over the target's path.  For example, if the application
+/// downloads three files from the internet then one [`Phazer`] is created for each file.
+///
+/// By default [`Phazer`] uses a simple rename commit strategy ([`SIMPLE_RENAME_STRATEGY`]).  When
+/// [`Phazer::commit`] is called, [`rename`] is used to replace the target file with the working
+/// file.  [`PhazerBuilder`] can be used to construct a [`Phazer`] with a different commit strategy.
+/// The one other commit strategy availabe with this crate is [`RENAME_WITH_RETRY_STRATEGY`].
+///
 pub struct Phazer<'cs> {
-    #[cfg(any(feature = "simple", feature = "tokio"))]
     file_created: Cell<bool>,
     commit_strategy: &'cs dyn CommitStrategy,
     working_path: PathBuf,
@@ -107,7 +123,6 @@ impl<'cs> Phazer<'cs> {
         let mut working_path = target_path.clone();
         working_path.set_extension(working_ext);
         Phazer {
-            #[cfg(any(feature = "simple", feature = "tokio"))]
             file_created: Cell::new(false),
             commit_strategy,
             target_path,
@@ -118,10 +133,29 @@ impl<'cs> Phazer<'cs> {
     ///
     /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
     pub fn commit(self) -> Result<(), (std::io::Error, Phazer<'cs>)> {
-        match self.commit_strategy.commit(&self) {
-            Ok(()) => Ok(()),
-            Err(e) => Err((e, self)),
+        if self.file_created.get() {
+            match self.commit_strategy.commit(&self) {
+                Ok(()) => Ok(()),
+                Err(e) => Err((e, self)),
+            }
+        } else {
+            Ok(())
         }
+    }
+    /// `first_writer` returns if the working file has not yet been created; if the caller is the
+    /// creating the first writer.
+    #[allow(dead_code)]
+    fn first_writer(&self) -> bool {
+        if !self.file_created.get() {
+            self.file_created.set(true);
+            true
+        } else {
+            false
+        }
+    }
+    #[cfg(feature = "test_helpers")]
+    pub fn working_path(&self) -> &Path {
+        &self.working_path
     }
 }
 
