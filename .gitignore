@@ -3,4 +3,5 @@ Cargo.lock
 downloads/
 fuffing/
 local/
+phazer/test.cfg
 target/

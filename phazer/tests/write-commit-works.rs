@@ -23,7 +23,10 @@ mod simple {
 
     use super::if_error;
 
-    fn write_commit_works<C, P>(phazer_new: C, filename: P) -> Result<(), Box<dyn std::error::Error>>
+    fn write_commit_works<C, P>(
+        phazer_new: C,
+        filename: P,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         C: Fn(&PathBuf) -> Phazer,
         P: AsRef<Path>,
@@ -34,8 +37,14 @@ mod simple {
         let working_path = p.working_path().to_path_buf();
 
         // At this point neither file should exist
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write some stuff, then close the working file
         let mut w = p.simple_writer()?;
@@ -43,15 +52,27 @@ mod simple {
         drop(w);
 
         // At this point the working file should exist but not the target
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
 
         // Commit the first version
-        p.commit().map_err(|v| v.0)?;
+        p.commit()?;
 
         // At this point the target should exist and the working file should be gone
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Ensure the target has the expected data
         let s = read_to_string(&target_path)?;
@@ -62,8 +83,14 @@ mod simple {
         let working_path = p.working_path().to_path_buf();
 
         // At this point the target must exist and the working file must not
-        if_error(!target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write some stuff, then close the working file
         let mut w = p.simple_writer()?;
@@ -71,15 +98,27 @@ mod simple {
         drop(w);
 
         // At this point both files should exist
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
 
         // Commit the first version
-        p.commit().map_err(|v| v.0)?;
+        p.commit()?;
 
         // At this point the target should exist and the working file should be gone
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Ensure the target has the expected data
         let s = read_to_string(&target_path)?;
@@ -92,31 +131,34 @@ mod simple {
 
     #[test]
     fn write_commit_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_commit_works(
-            |p| Phazer::new(p),
-            "simple-write-commit-works.txt")
+        write_commit_works(|p| Phazer::new(p), "simple-write-commit-works.txt")
     }
 
     #[test]
     fn write_commit_using_simple_rename_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_commit_works(|p| {
-            PhazerBuilder::new()
-                .strategy(SIMPLE_RENAME_STRATEGY)
-                .path(p)
-                .build()
-        }, "simple-write-commit-simple-rename-works.txt")
+        write_commit_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(SIMPLE_RENAME_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "simple-write-commit-simple-rename-works.txt",
+        )
     }
 
     #[test]
     fn write_commit_using_rename_with_retry_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_commit_works(|p| {
-            PhazerBuilder::new()
-                .strategy(RENAME_WITH_RETRY_STRATEGY)
-                .path(p)
-                .build()
-        }, "simple-write-commit-rename-with-retry-works.txt")
+        write_commit_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "simple-write-commit-rename-with-retry-works.txt",
+        )
     }
-
 }
 
 #[cfg(all(feature = "tokio", feature = "test_helpers"))]
@@ -131,7 +173,10 @@ mod tokio {
 
     use super::if_error;
 
-    async fn write_commit_works<C, P>(phazer_new: C, filename: P) -> Result<(), Box<dyn std::error::Error>>
+    async fn write_commit_works<C, P>(
+        phazer_new: C,
+        filename: P,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         C: Fn(&PathBuf) -> Phazer,
         P: AsRef<Path>,
@@ -142,8 +187,14 @@ mod tokio {
         let working_path = p.working_path().to_path_buf();
 
         // At this point neither file should exist
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write some stuff, then close the working file
         let mut w = p.tokio_writer().await?;
@@ -151,15 +202,27 @@ mod tokio {
         drop(w);
 
         // At this point the working file should exist but not the target
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
 
         // Commit the first version
-        p.commit().map_err(|v| v.0)?;
+        p.commit()?;
 
         // At this point the target should exist and the working file should be gone
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Ensure the target has the expected data
         let s = read_to_string(&target_path).await?;
@@ -170,8 +233,14 @@ mod tokio {
         let working_path = p.working_path().to_path_buf();
 
         // At this point the target must exist and the working file must not
-        if_error(!target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write some stuff, then close the working file
         let mut w = p.tokio_writer().await?;
@@ -179,15 +248,27 @@ mod tokio {
         drop(w);
 
         // At this point both files should exist
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
 
         // Commit the first version
-        p.commit().map_err(|v| v.0)?;
+        p.commit()?;
 
         // At this point the target should exist and the working file should be gone
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Ensure the target has the expected data
         let s = read_to_string(&target_path).await?;
@@ -199,30 +280,37 @@ mod tokio {
     }
 
     #[tokio::test]
-    async fn write_commit_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_commit_works(
-            |p| Phazer::new(p),
-            "tokio-write-commit-works.txt").await
+    async fn write_commit_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>>
+    {
+        write_commit_works(|p| Phazer::new(p), "tokio-write-commit-works.txt").await
     }
 
     #[tokio::test]
     async fn write_commit_using_simple_rename_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_commit_works(|p| {
-            PhazerBuilder::new()
-                .strategy(SIMPLE_RENAME_STRATEGY)
-                .path(p)
-                .build()
-        }, "tokio-write-commit-simple-rename-works.txt").await
+        write_commit_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(SIMPLE_RENAME_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "tokio-write-commit-simple-rename-works.txt",
+        )
+        .await
     }
 
     #[tokio::test]
-    async fn write_commit_using_rename_with_retry_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_commit_works(|p| {
-            PhazerBuilder::new()
-                .strategy(RENAME_WITH_RETRY_STRATEGY)
-                .path(p)
-                .build()
-        }, "tokio-write-commit-rename-with-retry-works.txt").await
+    async fn write_commit_using_rename_with_retry_works() -> Result<(), Box<dyn std::error::Error>>
+    {
+        write_commit_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "tokio-write-commit-rename-with-retry-works.txt",
+        )
+        .await
     }
-
 }

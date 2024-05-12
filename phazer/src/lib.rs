@@ -18,8 +18,8 @@
 //!
 //! A common failure when getting data from the internet is an interrupted download.  Unless
 //! precautions are taken the file ends up truncated (essentially corrupt).  That would result in a
-//! bad experience your users.  The application might stop running after outputting a cryptic error
-//! regarding an unreadable ZIP file.
+//! bad experience for your users.  The application might stop running after outputting a cryptic
+//! error regarding an unreadable ZIP file.
 //!
 //! A similar problem occurs with configuration files.  We want our service to only see a complete
 //! configuration file.  A partial configuration file might even introduce a security
@@ -29,7 +29,6 @@
 //! Either the entire names.zip file is downloaded or the file is missing.  Either the old complete
 //! configuration file is used or the new complete configuration file is used.
 //!
-
 //! The following example shows how an interrupted application using this crate avoids putting a
 //! partial file in use.
 //!
@@ -53,7 +52,7 @@
 //!
 //!     writeln!(w, "Timeout=10")?;
 //!     drop(w);
-//!     p.commit().map_err(|v| v.0)?;
+//!     p.commit()?;
 //!     Ok(())
 //! }
 //! # #[cfg(not(feature = "simple"))]
@@ -107,10 +106,7 @@ impl<'cs> Phazer<'cs> {
     {
         Self::inner_new(path.into(), SIMPLE_RENAME_STRATEGY)
     }
-    fn inner_new(
-        target_path: PathBuf,
-        commit_strategy: &'cs dyn CommitStrategy,
-    ) -> Phazer {
+    fn inner_new(target_path: PathBuf, commit_strategy: &'cs dyn CommitStrategy) -> Phazer {
         let phazer_id = current_phazer_id();
         let process_id = std::process::id();
         let lft = if let Some(ext) = target_path.extension() {
@@ -132,7 +128,11 @@ impl<'cs> Phazer<'cs> {
     /// `commit` renames the working file so it becomes the target file.
     ///
     /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
-    pub fn commit(self) -> Result<(), (std::io::Error, Phazer<'cs>)> {
+    pub fn commit(self) -> Result<(), std::io::Error> {
+        self.commit2().map_err(|e| e.0)
+    }
+
+    pub fn commit2(self) -> Result<(), (std::io::Error, Phazer<'cs>)> {
         if self.file_created.get() {
             match self.commit_strategy.commit(&self) {
                 Ok(()) => Ok(()),
@@ -206,7 +206,7 @@ impl CommitStrategy for RenameWithRetryStrategy {
                     }
                 }
             }
-            std::thread::sleep(std::time::Duration::from_millis(10*tries));
+            std::thread::sleep(std::time::Duration::from_millis(10 * tries));
         }
     }
 }
@@ -265,7 +265,10 @@ impl<'cs> PhazerBuilderWithPath<'cs> {
         self
     }
     pub fn build(self) -> Phazer<'cs> {
-        let Self { commit_strategy, target_path } = self;
+        let Self {
+            commit_strategy,
+            target_path,
+        } = self;
         let commit_strategy = commit_strategy.unwrap_or(SIMPLE_RENAME_STRATEGY);
         Phazer::inner_new(target_path, commit_strategy)
     }

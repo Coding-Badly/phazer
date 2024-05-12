@@ -23,7 +23,10 @@ mod simple {
 
     use super::if_error;
 
-    fn write_no_commit_no_target_works<C, P>(phazer_new: C, filename: P) -> Result<(), Box<dyn std::error::Error>>
+    fn write_no_commit_no_target_works<C, P>(
+        phazer_new: C,
+        filename: P,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         C: Fn(&PathBuf) -> Phazer,
         P: AsRef<Path>,
@@ -34,8 +37,14 @@ mod simple {
         let working_path = p.working_path().to_path_buf();
 
         // At this point neither file should exist
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write some stuff, then close the working file
         let mut w = p.simple_writer()?;
@@ -43,19 +52,34 @@ mod simple {
         drop(w);
 
         // At this point the working file should exist but not the target
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
 
         drop(p);
 
         // At this point neither file should exist
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         Ok(())
     }
 
-    fn write_no_commit_have_target_works<C, P>(phazer_new: C, filename: P) -> Result<(), Box<dyn std::error::Error>>
+    fn write_no_commit_have_target_works<C, P>(
+        phazer_new: C,
+        filename: P,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         C: Fn(&PathBuf) -> Phazer,
         P: AsRef<Path>,
@@ -66,27 +90,48 @@ mod simple {
         let working_path = p.working_path().to_path_buf();
 
         // At this point neither file should exist
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write nothing, then close the working file
         let w = p.simple_writer()?;
         drop(w);
 
         // At this point the working file should exist but not the target
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
 
         // Commit the empty file
-        p.commit().map_err(|v| v.0)?;
+        p.commit()?;
 
         // At this point the target should exist and the working file should be gone
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Ensure the target is empty
         let s = read_to_string(&target_path)?;
-        if_error(s.len() > 0, "target_path file must be empty; nothing was written")?;
+        if_error(
+            s.len() > 0,
+            "target_path file must be empty; nothing was written",
+        )?;
 
         // Do it again.  This time without the commit.
 
@@ -94,8 +139,14 @@ mod simple {
         let working_path = p.working_path().to_path_buf();
 
         // At this point the target should exist and the working file should not
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write nothing, then close the working file
         let mut w = p.simple_writer()?;
@@ -103,14 +154,26 @@ mod simple {
         drop(w);
 
         // At this point both files should exist
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
 
         drop(p);
 
         // At this point the target should exist and the working file should not
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Ensure the target is empty
         let s = read_to_string(&target_path)?;
@@ -122,59 +185,78 @@ mod simple {
     }
 
     #[test]
-    fn write_no_commit_no_target_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>> {
+    fn write_no_commit_no_target_using_default_constructor_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         write_no_commit_no_target_works(
             |p| Phazer::new(p),
-            "simple-write-no-commit-no-target-works.txt")
+            "simple-write-no-commit-no-target-works.txt",
+        )
     }
 
     #[test]
-    fn write_no_commit_no_target_using_simple_rename_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_no_target_works(|p| {
-            PhazerBuilder::new()
-                .strategy(SIMPLE_RENAME_STRATEGY)
-                .path(p)
-                .build()
-        }, "simple-write-no-commit-no-target-simple-rename-works.txt")
+    fn write_no_commit_no_target_using_simple_rename_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write_no_commit_no_target_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(SIMPLE_RENAME_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "simple-write-no-commit-no-target-simple-rename-works.txt",
+        )
     }
 
     #[test]
-    fn write_no_commit_no_target_using_rename_with_retry_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_no_target_works(|p| {
-            PhazerBuilder::new()
-                .strategy(RENAME_WITH_RETRY_STRATEGY)
-                .path(p)
-                .build()
-        }, "simple-write-no-commit-no-target-rename-with-retry-works.txt")
+    fn write_no_commit_no_target_using_rename_with_retry_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write_no_commit_no_target_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "simple-write-no-commit-no-target-rename-with-retry-works.txt",
+        )
     }
 
     #[test]
-    fn write_no_commit_have_target_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>> {
+    fn write_no_commit_have_target_using_default_constructor_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         write_no_commit_have_target_works(
             |p| Phazer::new(p),
-            "simple-write-no-commit-have-target-works.txt")
+            "simple-write-no-commit-have-target-works.txt",
+        )
     }
 
     #[test]
-    fn write_no_commit_have_target_using_simple_rename_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_have_target_works(|p| {
-            PhazerBuilder::new()
-                .strategy(SIMPLE_RENAME_STRATEGY)
-                .path(p)
-                .build()
-        }, "simple-write-no-commit-have-target-simple-rename-works.txt")
+    fn write_no_commit_have_target_using_simple_rename_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write_no_commit_have_target_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(SIMPLE_RENAME_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "simple-write-no-commit-have-target-simple-rename-works.txt",
+        )
     }
 
     #[test]
-    fn write_no_commit_have_target_using_rename_with_retry_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_have_target_works(|p| {
-            PhazerBuilder::new()
-                .strategy(RENAME_WITH_RETRY_STRATEGY)
-                .path(p)
-                .build()
-        }, "simple-write-no-commit-have-target-rename-with-retry-works.txt")
+    fn write_no_commit_have_target_using_rename_with_retry_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write_no_commit_have_target_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "simple-write-no-commit-have-target-rename-with-retry-works.txt",
+        )
     }
-
 }
 
 #[cfg(all(feature = "tokio", feature = "test_helpers"))]
@@ -189,7 +271,10 @@ mod tokio {
 
     use super::if_error;
 
-    async fn write_no_commit_no_target_works<C, P>(phazer_new: C, filename: P) -> Result<(), Box<dyn std::error::Error>>
+    async fn write_no_commit_no_target_works<C, P>(
+        phazer_new: C,
+        filename: P,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         C: Fn(&PathBuf) -> Phazer,
         P: AsRef<Path>,
@@ -200,8 +285,14 @@ mod tokio {
         let working_path = p.working_path().to_path_buf();
 
         // At this point neither file should exist
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write some stuff, then close the working file
         let mut w = p.tokio_writer().await?;
@@ -209,19 +300,34 @@ mod tokio {
         drop(w);
 
         // At this point the working file should exist but not the target
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
 
         drop(p);
 
         // At this point neither file should exist
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         Ok(())
     }
 
-    async fn write_no_commit_have_target_works<C, P>(phazer_new: C, filename: P) -> Result<(), Box<dyn std::error::Error>>
+    async fn write_no_commit_have_target_works<C, P>(
+        phazer_new: C,
+        filename: P,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         C: Fn(&PathBuf) -> Phazer,
         P: AsRef<Path>,
@@ -232,27 +338,48 @@ mod tokio {
         let working_path = p.working_path().to_path_buf();
 
         // At this point neither file should exist
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write nothing, then close the working file
         let w = p.tokio_writer().await?;
         drop(w);
 
         // At this point the working file should exist but not the target
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(target_path.exists(), "target_path cannot exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            target_path.exists(),
+            "target_path cannot exist at this point",
+        )?;
 
         // Commit the empty file
-        p.commit().map_err(|v| v.0)?;
+        p.commit()?;
 
         // At this point the target should exist and the working file should be gone
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Ensure the target is empty
         let s = read_to_string(&target_path)?;
-        if_error(s.len() > 0, "target_path file must be empty; nothing was written")?;
+        if_error(
+            s.len() > 0,
+            "target_path file must be empty; nothing was written",
+        )?;
 
         // Do it again.  This time without the commit.
 
@@ -260,8 +387,14 @@ mod tokio {
         let working_path = p.working_path().to_path_buf();
 
         // At this point the target should exist and the working file should not
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Create the working file, write nothing, then close the working file
         let mut w = p.tokio_writer().await?;
@@ -269,14 +402,26 @@ mod tokio {
         drop(w);
 
         // At this point both files should exist
-        if_error(!working_path.exists(), "working_path must exist at this point")?;
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
+        if_error(
+            !working_path.exists(),
+            "working_path must exist at this point",
+        )?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
 
         drop(p);
 
         // At this point the target should exist and the working file should not
-        if_error(!target_path.exists(), "target_path must exist at this point")?;
-        if_error(working_path.exists(), "working_path cannot exist at this point")?;
+        if_error(
+            !target_path.exists(),
+            "target_path must exist at this point",
+        )?;
+        if_error(
+            working_path.exists(),
+            "working_path cannot exist at this point",
+        )?;
 
         // Ensure the target is empty
         let s = read_to_string(&target_path)?;
@@ -288,57 +433,82 @@ mod tokio {
     }
 
     #[tokio::test]
-    async fn write_no_commit_no_target_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>> {
+    async fn write_no_commit_no_target_using_default_constructor_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         write_no_commit_no_target_works(
             |p| Phazer::new(p),
-            "tokio-write-no-commit-no-target-works.txt").await
+            "tokio-write-no-commit-no-target-works.txt",
+        )
+        .await
     }
 
     #[tokio::test]
-    async fn write_no_commit_no_target_using_simple_rename_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_no_target_works(|p| {
-            PhazerBuilder::new()
-                .strategy(SIMPLE_RENAME_STRATEGY)
-                .path(p)
-                .build()
-        }, "tokio-write-no-commit-no-target-simple-rename-works.txt").await
+    async fn write_no_commit_no_target_using_simple_rename_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write_no_commit_no_target_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(SIMPLE_RENAME_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "tokio-write-no-commit-no-target-simple-rename-works.txt",
+        )
+        .await
     }
 
     #[tokio::test]
-    async fn write_no_commit_no_target_using_rename_with_retry_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_no_target_works(|p| {
-            PhazerBuilder::new()
-                .strategy(RENAME_WITH_RETRY_STRATEGY)
-                .path(p)
-                .build()
-        }, "tokio-write-no-commit-no-target-rename-with-retry-works.txt").await
+    async fn write_no_commit_no_target_using_rename_with_retry_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write_no_commit_no_target_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "tokio-write-no-commit-no-target-rename-with-retry-works.txt",
+        )
+        .await
     }
 
     #[tokio::test]
-    async fn write_no_commit_have_target_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>> {
+    async fn write_no_commit_have_target_using_default_constructor_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         write_no_commit_have_target_works(
             |p| Phazer::new(p),
-            "tokio-write-no-commit-have-target-works.txt").await
+            "tokio-write-no-commit-have-target-works.txt",
+        )
+        .await
     }
 
     #[tokio::test]
-    async fn write_no_commit_have_target_using_simple_rename_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_have_target_works(|p| {
-            PhazerBuilder::new()
-                .strategy(SIMPLE_RENAME_STRATEGY)
-                .path(p)
-                .build()
-        }, "tokio-write-no-commit-have-target-simple-rename-works.txt").await
+    async fn write_no_commit_have_target_using_simple_rename_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write_no_commit_have_target_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(SIMPLE_RENAME_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "tokio-write-no-commit-have-target-simple-rename-works.txt",
+        )
+        .await
     }
 
     #[tokio::test]
-    async fn write_no_commit_have_target_using_rename_with_retry_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_have_target_works(|p| {
-            PhazerBuilder::new()
-                .strategy(RENAME_WITH_RETRY_STRATEGY)
-                .path(p)
-                .build()
-        }, "tokio-write-no-commit-have-target-rename-with-retry-works.txt").await
+    async fn write_no_commit_have_target_using_rename_with_retry_works(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write_no_commit_have_target_works(
+            |p| {
+                PhazerBuilder::new()
+                    .strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .path(p)
+                    .build()
+            },
+            "tokio-write-no-commit-have-target-rename-with-retry-works.txt",
+        )
+        .await
     }
-
 }

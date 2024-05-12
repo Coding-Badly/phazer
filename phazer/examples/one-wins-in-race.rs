@@ -20,7 +20,9 @@ mod inner {
     use std::path::PathBuf;
     use std::thread::{scope, ScopedJoinHandle};
 
-    use phazer::{CommitStrategy, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY};
+    use phazer::{
+        CommitStrategy, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY,
+    };
 
     trait IgnoreThese {
         fn ignore(&self, kind: ErrorKind) -> bool;
@@ -64,37 +66,47 @@ mod inner {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             let text = match (self.error_count == 0, self.worked) {
                 (true, true) => Cow::Borrowed("No errors and at least one thread won.  Success!"),
-                (false, true) => Cow::Owned(format!("{} errors and at least one thread won.  A partial success.", self.error_count)),
+                (false, true) => Cow::Owned(format!(
+                    "{} errors and at least one thread won.  A partial success.",
+                    self.error_count
+                )),
                 (_, false) => Cow::Borrowed("Yikes!  No threads won.  That's a failure."),
             };
             f.pad(&text)
         }
     }
 
-    fn do_one(commit_strategy: &(dyn CommitStrategy + Sync)) -> Result<DoOneResult, Box<dyn std::error::Error>> {
+    fn do_one(
+        commit_strategy: &(dyn CommitStrategy + Sync),
+    ) -> Result<DoOneResult, Box<dyn std::error::Error>> {
         let working_dir = prepare_working_dir()?;
         let target_path = working_dir.join("one-wins-in-race.txt");
         ignore(remove_file(&target_path), ErrorKind::NotFound)?;
 
-        let contents = vec!["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
+        let contents = vec![
+            "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth",
+            "tenth",
+        ];
 
-        println!("{} threads racing to win the target file {}....", contents.len(), target_path.display());
+        println!(
+            "{} threads racing to win the target file {}....",
+            contents.len(),
+            target_path.display()
+        );
         let results: Vec<_> = scope(|s| {
             let mut join_handles = Vec::<ScopedJoinHandle<'_, Result<(), std::io::Error>>>::new();
             for content in contents.iter() {
                 let tpc = target_path.clone();
-                join_handles.push(
-                    s.spawn(move || {
-                        let p = PhazerBuilder::with_path(tpc)
-                            .strategy(commit_strategy)
-                            .build();
-                        let mut w = p.simple_writer()?;
-                        w.write_all(content.as_bytes())?;
-                        drop(w);
-                        p.commit().map_err(|v| v.0)?;
-                        Ok(())
-                    })
-                );
+                join_handles.push(s.spawn(move || {
+                    let p = PhazerBuilder::with_path(tpc)
+                        .strategy(commit_strategy)
+                        .build();
+                    let mut w = p.simple_writer()?;
+                    w.write_all(content.as_bytes())?;
+                    drop(w);
+                    p.commit()?;
+                    Ok(())
+                }));
             }
             join_handles
                 .into_iter()
@@ -103,11 +115,9 @@ mod inner {
         });
         let errors: Vec<_> = results
             .into_iter()
-            .filter_map(|r| {
-                match r {
-                    Ok(()) => None,
-                    Err(e) => Some(e),
-                }
+            .filter_map(|r| match r {
+                Ok(()) => None,
+                Err(e) => Some(e),
             })
             .collect();
         let error_count = errors.len();
@@ -156,9 +166,7 @@ mod inner {
 mod inner {
     pub fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
-        println!(
-            "This example requires the 'simple' feature to be enabled.  Try..."
-        );
+        println!("This example requires the 'simple' feature to be enabled.  Try...");
         println!("cargo run --example one-wins-in-race --features simple");
         println!();
         Ok(())

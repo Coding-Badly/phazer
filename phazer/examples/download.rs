@@ -89,7 +89,7 @@ mod inner {
         dst.flush().await?;
 
         println!("Download finished.  Committing...");
-        p.commit().map_err(|e| e.0)?;
+        p.commit()?;
 
         Ok(())
     }
