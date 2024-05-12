@@ -74,6 +74,13 @@ mod simple {
         let dor = do_one("one-wins-in-race-simple-rename.txt", SIMPLE_RENAME_STRATEGY)?;
         // Under Windows the strategy works
         assert!(dor.winner.is_some());
+        // POSIX.1-2001 requires the rename to be atomic which implies that, if a single thread is
+        // able to rename, all threads will be able to rename.  In which case we expect zero errors.
+        #[cfg(unix)]
+        {
+            // There should be no errors
+            assert!(dor.errors.len() == 0);
+        }
         // If there are errors (there always has been) they are all permission denied
         for error in dor.errors.iter() {
             assert!(error.kind() == std::io::ErrorKind::PermissionDenied);
