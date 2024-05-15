@@ -66,17 +66,16 @@
 mod simple_writer;
 mod tokio_writer;
 
-use std::cell::Cell;
 use std::fs::{remove_file, rename};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 pub trait HasPaths {
     fn get_working_path(&self) -> &Path;
     fn get_target_path(&self) -> &Path;
 }
 
-pub trait CommitStrategy {
+pub trait CommitStrategy: Sync {
     fn commit(&self, phazer: &dyn HasPaths) -> std::io::Result<()>;
 }
 
@@ -92,7 +91,7 @@ pub trait CommitStrategy {
 /// The one other commit strategy availabe with this crate is [`RENAME_WITH_RETRY_STRATEGY`].
 ///
 pub struct Phazer<'cs> {
-    file_created: Cell<bool>,
+    file_created: AtomicBool,
     commit_strategy: &'cs dyn CommitStrategy,
     working_path: PathBuf,
     target_path: PathBuf,
@@ -119,7 +118,7 @@ impl<'cs> Phazer<'cs> {
         let mut working_path = target_path.clone();
         working_path.set_extension(working_ext);
         Phazer {
-            file_created: Cell::new(false),
+            file_created: AtomicBool::new(false),
             commit_strategy,
             target_path,
             working_path,
@@ -133,7 +132,7 @@ impl<'cs> Phazer<'cs> {
     }
 
     pub fn commit2(self) -> Result<(), (std::io::Error, Phazer<'cs>)> {
-        if self.file_created.get() {
+        if self.file_created.load(Ordering::Relaxed) {
             match self.commit_strategy.commit(&self) {
                 Ok(()) => Ok(()),
                 Err(e) => Err((e, self)),
@@ -143,15 +142,10 @@ impl<'cs> Phazer<'cs> {
         }
     }
     /// `first_writer` returns if the working file has not yet been created; if the caller is the
-    /// creating the first writer.
+    /// one creating the first writer.  It only returns `true` once.
     #[allow(dead_code)]
     fn first_writer(&self) -> bool {
-        if !self.file_created.get() {
-            self.file_created.set(true);
-            true
-        } else {
-            false
-        }
+        !self.file_created.swap(true, Ordering::Relaxed)
     }
     #[cfg(feature = "test_helpers")]
     pub fn working_path(&self) -> &Path {
@@ -183,7 +177,13 @@ impl CommitStrategy for SimpleRenameStrategy {
     }
 }
 
-pub const SIMPLE_RENAME_STRATEGY: &(dyn CommitStrategy + Sync) = &SimpleRenameStrategy {};
+impl Default for SimpleRenameStrategy {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+pub const SIMPLE_RENAME_STRATEGY: &dyn CommitStrategy = &SimpleRenameStrategy {};
 
 pub struct RenameWithRetryStrategy {}
 
@@ -211,7 +211,13 @@ impl CommitStrategy for RenameWithRetryStrategy {
     }
 }
 
-pub const RENAME_WITH_RETRY_STRATEGY: &(dyn CommitStrategy + Sync) = &RenameWithRetryStrategy {};
+impl Default for RenameWithRetryStrategy {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+pub const RENAME_WITH_RETRY_STRATEGY: &dyn CommitStrategy = &RenameWithRetryStrategy {};
 
 pub struct PhazerBuilder<'cs> {
     commit_strategy: Option<&'cs dyn CommitStrategy>,

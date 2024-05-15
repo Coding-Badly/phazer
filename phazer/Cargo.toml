@@ -20,8 +20,9 @@ edition = "2021"
 tokio = { version = "1", features = ["fs"], optional = true }
 
 [dev-dependencies]
-futures-util = { version = "0.3.29" }
-reqwest = { version = "0.11.22", features = ["stream"] }
+futures = { version = "0.3.30" }
+futures-util = { version = "0.3.30" }
+reqwest = { version = "0.12.4", features = ["stream"] }
 tokio = { version = "1", features = ["full"] }
 url = { version = "2.5.0" }
 windows-sys = { version = "0.52.0", features = ["Win32_Storage_FileSystem"] }

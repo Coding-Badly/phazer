@@ -24,7 +24,7 @@ use tokio::io::{AsyncRead, AsyncSeek, AsyncWrite};
 impl<'cs> Phazer<'cs> {
     /// Returns an asynchronous file-like thing that's used to build the working file.
     ///
-    /// This method is available when then `tokio` feature is enabled.
+    /// This method is available when the `tokio` feature is enabled.
     pub async fn tokio_writer<'a>(&'a self) -> std::io::Result<TokioPhazerWriter> {
         let mut options = OpenOptions::new();
         // Always allow read / write
