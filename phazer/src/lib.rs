@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Imagine, if you will, you are building an application that downloads a file from a website.
-//! Let's say the application is downloading baby name data from the U.S. Social Security
-//! Administration (<https://www.ssa.gov/oact/babynames/names.zip>).
+//! Imagine, building an application that downloads a file from a website.  Let's say the
+//! application is downloading baby name data from the U.S. Social Security Administration
+//! (<https://www.ssa.gov/oact/babynames/names.zip>).
 //!
 //! A common failure when getting data from the internet is an interrupted download.  Unless
 //! precautions are taken the file ends up truncated (essentially corrupt).  That would result in a
-//! bad experience for your users.  The application might stop running after outputting a cryptic
-//! error regarding an unreadable ZIP file.
+//! bad experience.  The application might stop running after outputting a cryptic error message
+//! about an unreadable ZIP file.
 //!
-//! A similar problem occurs with configuration files.  We want our service to only see a complete
-//! configuration file.  A partial configuration file might even introduce a security
+//! A similar problem occurs with configuration files.  A service should only ever be give a
+//! complete configuration file.  A partial configuration file might even introduce a security
 //! vulnerablility.
 //!
 //! The purpose of this crate is to present a file to a system in a finished state or not at all.
-//! Either the entire names.zip file is downloaded or the file is missing.  Either the old complete
-//! configuration file is used or the new complete configuration file is used.
+//! Either the entire names.zip file is downloaded or the file is missing.  Either the old
+//! _complete_ configuration file is used or the new _complete_ configuration file is used.
 //!
 //! The following example shows how an interrupted application using this crate avoids putting a
 //! partial file in use.
@@ -98,7 +98,20 @@ pub struct Phazer<'cs> {
 }
 
 impl<'cs> Phazer<'cs> {
-    /// Create a Phazer where `path` is the target / destination file.
+    /// Create a [Phazer] where `path` is the target / destination file.
+    ///
+    /// [Phazer] provides easy access to a working file.  When the working file is complete,
+    /// [Phazer] manages atomically replacing the target file with the working file.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - path to the target file.  Ideally, this is a full path to the target file so
+    /// changing the working directory does not cause problems.
+    ///
+    /// # Return Value
+    ///
+    /// The new [Phazer] is returned after generating a name for the working file.
+    ///
     pub fn new<P>(path: P) -> Self
     where
         P: Into<PathBuf>,
@@ -124,13 +137,31 @@ impl<'cs> Phazer<'cs> {
             working_path,
         }
     }
-    /// `commit` renames the working file so it becomes the target file.
+
+    /// `commit` atomically replaces the target file with the working file.
     ///
     /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok(())` is returned when the target file is successfully replaced by the working file or if
+    /// a working file was never created.
+    ///
+    /// `Err(`[`Error`][ioe]`)` is returned on failure.
+    ///
+    /// operating system call was successful and the buffer was large
+    /// enough to accommodate all the data.
+    ///
+    /// [ioe]: std::io::Error
+    ///
     pub fn commit(self) -> Result<(), std::io::Error> {
         self.commit2().map_err(|e| e.0)
     }
 
+    /// `commit` renames the working file so it becomes the target file.
+    ///
+    /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
+    ///
     pub fn commit2(self) -> Result<(), (std::io::Error, Phazer<'cs>)> {
         if self.file_created.load(Ordering::Relaxed) {
             match self.commit_strategy.commit(&self) {
