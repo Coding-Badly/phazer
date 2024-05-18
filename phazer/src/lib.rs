@@ -141,11 +141,12 @@ impl<'cs> Phazer<'cs> {
     /// `commit` atomically replaces the target file with the working file.
     ///
     /// `commit` consumes the Phazer; it can only be called when there are no outstanding writers.
+    /// If no writers were created then `commit` just returns success.
     ///
     /// # Return Value
     ///
-    /// `Ok(())` is returned when the target file is successfully replaced by the working file or if
-    /// a working file was never created.
+    /// `Ok(())` is returned if the target file is successfully replaced by the working file or if a
+    /// working file was never created.
     ///
     /// `Err(`[`Error`][ioe]`)` is returned on failure.
     ///
