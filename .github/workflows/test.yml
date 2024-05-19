@@ -5,10 +5,24 @@ run-name: Ensure Test passes on the ${{ github.ref_name }} branch.  ${{ github.e
 on: [push]
 
 jobs:
-  run-test:
-    name: Run Test
+  linux-test:
+    name: Run Tests for Linux
+    runs-on: linux-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Test
+        run: cargo test --features test_helpers,simple,tokio
+  macos-test:
+    name: Run Tests for macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Test
+        run: cargo test --features test_helpers,simple,tokio
+  windows-test:
+    name: Run Tests for Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - name: Run Test
-        run: cargo test
+        run: cargo test --features test_helpers,simple,tokio
