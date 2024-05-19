@@ -16,8 +16,8 @@ mod common;
 
 #[cfg(feature = "simple")]
 mod simple {
-    use std::fs::{metadata, remove_file, set_permissions};
-    use std::io::Write;
+    use std::fs::{metadata, read_to_string, remove_file, set_permissions};
+    use std::io::{ErrorKind, Write};
     use std::path::{Path, PathBuf};
 
     use phazer::Phazer;
@@ -26,7 +26,7 @@ mod simple {
 
     fn set_readonly<P: AsRef<Path>>(path: P, value: bool) -> Result<bool, std::io::Error> {
         let path = path.as_ref();
-        let m =  metadata(path)?;
+        let m = metadata(path)?;
         let mut p = m.permissions();
         let rv = p.readonly();
         p.set_readonly(value);
@@ -34,7 +34,7 @@ mod simple {
         Ok(rv)
     }
 
-    fn using_simple_rename<C, P>(
+    fn do_one<C, P>(
         phazer_new: C,
         filename: P,
     ) -> Result<Result<(), std::io::Error>, Box<dyn std::error::Error>>
@@ -56,7 +56,20 @@ mod simple {
         let mut w = p.simple_writer()?;
         w.write_all("new stuff".as_bytes())?;
         drop(w);
-        let rv = p.commit();
+        let mut rv = p.commit();
+
+        match rv {
+            Ok(()) => {
+                let s = read_to_string(&target_path)?;
+                if s != "new stuff" {
+                    rv = Err(std::io::Error::new(
+                        ErrorKind::Other,
+                        "target contents are incorrect",
+                    ));
+                }
+            }
+            Err(_) => {}
+        }
 
         set_readonly(&target_path, orov)?;
 
@@ -66,11 +79,8 @@ mod simple {
     }
 
     #[test]
-    fn junk() -> Result<(), Box<dyn std::error::Error>> {
-        let rv = using_simple_rename(
-            |p| Phazer::new(p),
-            "junk.txt")?;
-        println!("rv = {:?}", rv);
+    fn using_default_constructor() -> Result<(), Box<dyn std::error::Error>> {
+        let rv = do_one(|p| Phazer::new(p), "posix-read-only-works.txt")?;
 
         #[cfg(unix)]
         match rv {
@@ -80,7 +90,9 @@ mod simple {
 
         #[cfg(windows)]
         match rv {
-            Ok(()) => Err(std::io::Error::new(ErrorKind::Other, "windows is expected to fail").into()),
+            Ok(()) => {
+                Err(std::io::Error::new(ErrorKind::Other, "windows is expected to fail").into())
+            }
             Err(e) => {
                 if e.kind() == ErrorKind::PermissionDenied {
                     Ok(())
@@ -93,5 +105,4 @@ mod simple {
 }
 
 #[cfg(feature = "tokio")]
-mod tokio {
-}
+mod tokio {}
