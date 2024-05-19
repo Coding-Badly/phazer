@@ -71,7 +71,24 @@ mod simple {
             |p| Phazer::new(p),
             "junk.txt")?;
         println!("rv = {:?}", rv);
-        Ok(())
+
+        #[cfg(unix)]
+        match rv {
+            Ok(()) => Ok(()),
+            Err(e) => Err(e.into()),
+        }
+
+        #[cfg(windows)]
+        match rv {
+            Ok(()) => Err(std::io::Error::new(ErrorKind::Other, "windows is expected to fail").into()),
+            Err(e) => {
+                if e.kind() == ErrorKind::PermissionDenied {
+                    Ok(())
+                } else {
+                    Err(e.into())
+                }
+            }
+        }
     }
 }
 
