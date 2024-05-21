@@ -7,7 +7,7 @@ on: [push]
 jobs:
   linux-test:
     name: Run Tests for Linux
-    runs-on: linux-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Run Test
