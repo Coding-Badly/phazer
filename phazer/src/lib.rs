@@ -70,13 +70,14 @@ use std::fs::{remove_file, rename};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-pub trait HasPaths {
+pub trait CommitDetails {
     fn get_working_path(&self) -> &Path;
     fn get_target_path(&self) -> &Path;
+    fn get_jitter(&self) -> usize;
 }
 
 pub trait CommitStrategy: Sync {
-    fn commit(&self, phazer: &dyn HasPaths) -> std::io::Result<()>;
+    fn commit(&self, phazer: &dyn CommitDetails) -> std::io::Result<()>;
 }
 
 /// [`Phazer`] manages the transition of a working file to a target file.
@@ -95,6 +96,7 @@ pub struct Phazer<'cs> {
     commit_strategy: &'cs dyn CommitStrategy,
     working_path: PathBuf,
     target_path: PathBuf,
+    phazer_id: usize,
 }
 
 impl<'cs> Phazer<'cs> {
@@ -122,6 +124,7 @@ impl<'cs> Phazer<'cs> {
             commit_strategy,
             target_path,
             working_path,
+            phazer_id,
         }
     }
     /// `commit` renames the working file so it becomes the target file.
@@ -160,19 +163,22 @@ impl<'cs> Drop for Phazer<'cs> {
     }
 }
 
-impl<'cs> HasPaths for Phazer<'cs> {
+impl<'cs> CommitDetails for Phazer<'cs> {
     fn get_working_path(&self) -> &Path {
         self.working_path.as_path()
     }
     fn get_target_path(&self) -> &Path {
         self.target_path.as_path()
     }
+    fn get_jitter(&self) -> usize {
+        self.phazer_id
+    }
 }
 
 pub struct SimpleRenameStrategy {}
 
 impl CommitStrategy for SimpleRenameStrategy {
-    fn commit(&self, phazer: &dyn HasPaths) -> std::io::Result<()> {
+    fn commit(&self, phazer: &dyn CommitDetails) -> std::io::Result<()> {
         rename(phazer.get_working_path(), phazer.get_target_path())
     }
 }
@@ -188,8 +194,10 @@ pub const SIMPLE_RENAME_STRATEGY: &dyn CommitStrategy = &SimpleRenameStrategy {}
 pub struct RenameWithRetryStrategy {}
 
 impl CommitStrategy for RenameWithRetryStrategy {
-    fn commit(&self, phazer: &dyn HasPaths) -> std::io::Result<()> {
+    fn commit(&self, phazer: &dyn CommitDetails) -> std::io::Result<()> {
         let mut tries = 0;
+        let jitter = (phazer.get_jitter() as u64) & 0xF;
+        let base_sleep = 11 + (3 * jitter);
         loop {
             tries += 1;
             let rv = rename(phazer.get_working_path(), phazer.get_target_path());
@@ -206,7 +214,7 @@ impl CommitStrategy for RenameWithRetryStrategy {
                     }
                 }
             }
-            std::thread::sleep(std::time::Duration::from_millis(10 * tries));
+            std::thread::sleep(std::time::Duration::from_millis(base_sleep * tries));
         }
     }
 }

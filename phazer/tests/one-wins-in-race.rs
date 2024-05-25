@@ -93,6 +93,13 @@ mod simple {
             "simple-one-wins-in-race-simple-rename.txt",
             SIMPLE_RENAME_STRATEGY,
         )?;
+        // Always output the errors to help with troubleshooting
+        if dor.errors.len() > 0 {
+            println!("Errors...");
+            for error in dor.errors.iter() {
+                println!("{:?}, {}", error, error);
+            }
+        }
         // Under Windows the strategy works
         assert!(dor.winner.is_some());
         // POSIX.1-2001 requires the rename to be atomic which implies that, if a single thread is
@@ -116,6 +123,13 @@ mod simple {
             "simple-one-wins-in-race-rename-with-retry.txt",
             RENAME_WITH_RETRY_STRATEGY,
         )?;
+        // Always output the errors to help with troubleshooting
+        if dor.errors.len() > 0 {
+            println!("Errors...");
+            for error in dor.errors.iter() {
+                println!("{:?}, {}", error, error);
+            }
+        }
         // Under Windows the strategy works
         assert!(dor.winner.is_some());
         // There should be no errors
