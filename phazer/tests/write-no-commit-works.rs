@@ -33,7 +33,12 @@ mod simple {
 
     use phazer::{Phazer, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY};
 
-    use crate::common::prepare_target_file;
+    use crate::common::{
+        prepare_target_file, WRITE_NO_COMMIT_HAVE_TARGET_SIMPLE_DEFAULT,
+        WRITE_NO_COMMIT_HAVE_TARGET_SIMPLE_RENAME, WRITE_NO_COMMIT_HAVE_TARGET_SIMPLE_WITH_RETRY,
+        WRITE_NO_COMMIT_NO_TARGET_SIMPLE_DEFAULT, WRITE_NO_COMMIT_NO_TARGET_SIMPLE_RENAME,
+        WRITE_NO_COMMIT_NO_TARGET_SIMPLE_WITH_RETRY,
+    };
 
     use super::if_error;
 
@@ -203,7 +208,7 @@ mod simple {
     ) -> Result<(), Box<dyn std::error::Error>> {
         write_no_commit_no_target_works(
             |p| Phazer::new(p),
-            "simple-write-no-commit-no-target-works.txt",
+            WRITE_NO_COMMIT_NO_TARGET_SIMPLE_DEFAULT,
         )
     }
 
@@ -217,7 +222,7 @@ mod simple {
                     .path(p)
                     .build()
             },
-            "simple-write-no-commit-no-target-simple-rename-works.txt",
+            WRITE_NO_COMMIT_NO_TARGET_SIMPLE_RENAME,
         )
     }
 
@@ -231,7 +236,7 @@ mod simple {
                     .path(p)
                     .build()
             },
-            "simple-write-no-commit-no-target-rename-with-retry-works.txt",
+            WRITE_NO_COMMIT_NO_TARGET_SIMPLE_WITH_RETRY,
         )
     }
 
@@ -240,7 +245,7 @@ mod simple {
     ) -> Result<(), Box<dyn std::error::Error>> {
         write_no_commit_have_target_works(
             |p| Phazer::new(p),
-            "simple-write-no-commit-have-target-works.txt",
+            WRITE_NO_COMMIT_HAVE_TARGET_SIMPLE_DEFAULT,
         )
     }
 
@@ -254,7 +259,7 @@ mod simple {
                     .path(p)
                     .build()
             },
-            "simple-write-no-commit-have-target-simple-rename-works.txt",
+            WRITE_NO_COMMIT_HAVE_TARGET_SIMPLE_RENAME,
         )
     }
 
@@ -268,7 +273,7 @@ mod simple {
                     .path(p)
                     .build()
             },
-            "simple-write-no-commit-have-target-rename-with-retry-works.txt",
+            WRITE_NO_COMMIT_HAVE_TARGET_SIMPLE_WITH_RETRY,
         )
     }
 }
@@ -281,7 +286,12 @@ mod tokio {
     use phazer::{Phazer, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY};
     use tokio::io::AsyncWriteExt;
 
-    use crate::common::prepare_target_file;
+    use crate::common::{
+        prepare_target_file, WRITE_NO_COMMIT_HAVE_TARGET_TOKIO_DEFAULT,
+        WRITE_NO_COMMIT_HAVE_TARGET_TOKIO_RENAME, WRITE_NO_COMMIT_HAVE_TARGET_TOKIO_WITH_RETRY,
+        WRITE_NO_COMMIT_NO_TARGET_TOKIO_DEFAULT, WRITE_NO_COMMIT_NO_TARGET_TOKIO_RENAME,
+        WRITE_NO_COMMIT_NO_TARGET_TOKIO_WITH_RETRY,
+    };
 
     use super::if_error;
 
@@ -449,11 +459,8 @@ mod tokio {
     #[tokio::test]
     async fn write_no_commit_no_target_using_default_constructor_works(
     ) -> Result<(), Box<dyn std::error::Error>> {
-        write_no_commit_no_target_works(
-            |p| Phazer::new(p),
-            "tokio-write-no-commit-no-target-works.txt",
-        )
-        .await
+        write_no_commit_no_target_works(|p| Phazer::new(p), WRITE_NO_COMMIT_NO_TARGET_TOKIO_DEFAULT)
+            .await
     }
 
     #[tokio::test]
@@ -466,7 +473,7 @@ mod tokio {
                     .path(p)
                     .build()
             },
-            "tokio-write-no-commit-no-target-simple-rename-works.txt",
+            WRITE_NO_COMMIT_NO_TARGET_TOKIO_RENAME,
         )
         .await
     }
@@ -481,7 +488,7 @@ mod tokio {
                     .path(p)
                     .build()
             },
-            "tokio-write-no-commit-no-target-rename-with-retry-works.txt",
+            WRITE_NO_COMMIT_NO_TARGET_TOKIO_WITH_RETRY,
         )
         .await
     }
@@ -491,7 +498,7 @@ mod tokio {
     ) -> Result<(), Box<dyn std::error::Error>> {
         write_no_commit_have_target_works(
             |p| Phazer::new(p),
-            "tokio-write-no-commit-have-target-works.txt",
+            WRITE_NO_COMMIT_HAVE_TARGET_TOKIO_DEFAULT,
         )
         .await
     }
@@ -506,7 +513,7 @@ mod tokio {
                     .path(p)
                     .build()
             },
-            "tokio-write-no-commit-have-target-simple-rename-works.txt",
+            WRITE_NO_COMMIT_HAVE_TARGET_TOKIO_RENAME,
         )
         .await
     }
@@ -521,7 +528,7 @@ mod tokio {
                     .path(p)
                     .build()
             },
-            "tokio-write-no-commit-have-target-rename-with-retry-works.txt",
+            WRITE_NO_COMMIT_HAVE_TARGET_TOKIO_WITH_RETRY,
         )
         .await
     }

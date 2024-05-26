@@ -33,7 +33,10 @@ mod simple {
 
     use phazer::{Phazer, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY};
 
-    use crate::common::prepare_target_file;
+    use crate::common::{
+        prepare_target_file, WRITE_COMMIT_SIMPLE_DEFAULT, WRITE_COMMIT_SIMPLE_RENAME,
+        WRITE_COMMIT_SIMPLE_WITH_RETRY,
+    };
 
     use super::if_error;
 
@@ -145,7 +148,7 @@ mod simple {
 
     #[test]
     fn write_commit_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_commit_works(|p| Phazer::new(p), "simple-write-commit-works.txt")
+        write_commit_works(|p| Phazer::new(p), WRITE_COMMIT_SIMPLE_DEFAULT)
     }
 
     #[test]
@@ -157,7 +160,7 @@ mod simple {
                     .path(p)
                     .build()
             },
-            "simple-write-commit-simple-rename-works.txt",
+            WRITE_COMMIT_SIMPLE_RENAME,
         )
     }
 
@@ -170,7 +173,7 @@ mod simple {
                     .path(p)
                     .build()
             },
-            "simple-write-commit-rename-with-retry-works.txt",
+            WRITE_COMMIT_SIMPLE_WITH_RETRY,
         )
     }
 }
@@ -183,7 +186,10 @@ mod tokio {
     use tokio::fs::{read_to_string, remove_file};
     use tokio::io::AsyncWriteExt;
 
-    use crate::common::prepare_target_file;
+    use crate::common::{
+        prepare_target_file, WRITE_COMMIT_TOKIO_DEFAULT, WRITE_COMMIT_TOKIO_RENAME,
+        WRITE_COMMIT_TOKIO_WITH_RETRY,
+    };
 
     use super::if_error;
 
@@ -296,7 +302,7 @@ mod tokio {
     #[tokio::test]
     async fn write_commit_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>>
     {
-        write_commit_works(|p| Phazer::new(p), "tokio-write-commit-works.txt").await
+        write_commit_works(|p| Phazer::new(p), WRITE_COMMIT_TOKIO_DEFAULT).await
     }
 
     #[tokio::test]
@@ -308,7 +314,7 @@ mod tokio {
                     .path(p)
                     .build()
             },
-            "tokio-write-commit-simple-rename-works.txt",
+            WRITE_COMMIT_TOKIO_RENAME,
         )
         .await
     }
@@ -323,7 +329,7 @@ mod tokio {
                     .path(p)
                     .build()
             },
-            "tokio-write-commit-rename-with-retry-works.txt",
+            WRITE_COMMIT_TOKIO_WITH_RETRY,
         )
         .await
     }

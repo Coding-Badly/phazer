@@ -22,7 +22,7 @@ mod simple {
 
     use phazer::Phazer;
 
-    use crate::common::prepare_target_file;
+    use crate::common::{prepare_target_file, POSIX_READ_ONLY_DEFAULT};
 
     fn set_readonly<P: AsRef<Path>>(path: P, value: bool) -> Result<bool, std::io::Error> {
         let path = path.as_ref();
@@ -80,7 +80,7 @@ mod simple {
 
     #[test]
     fn using_default_constructor() -> Result<(), Box<dyn std::error::Error>> {
-        let rv = do_one(|p| Phazer::new(p), "posix-read-only-works.txt")?;
+        let rv = do_one(|p| Phazer::new(p), POSIX_READ_ONLY_DEFAULT)?;
 
         #[cfg(unix)]
         match rv {
