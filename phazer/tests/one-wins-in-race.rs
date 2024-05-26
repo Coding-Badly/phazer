@@ -36,7 +36,9 @@ mod simple {
         CommitStrategy, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY,
     };
 
-    use crate::common::prepare_target_file;
+    use crate::common::{
+        prepare_target_file, ONE_WINS_IN_RACE_SIMPLE_RENAME, ONE_WINS_IN_RACE_SIMPLE_WITH_RETRY,
+    };
 
     use super::{DoOneResult, CONTENTS};
 
@@ -89,10 +91,7 @@ mod simple {
 
     #[test]
     fn using_simple_rename() -> Result<(), std::io::Error> {
-        let dor = do_one(
-            "simple-one-wins-in-race-simple-rename.txt",
-            SIMPLE_RENAME_STRATEGY,
-        )?;
+        let dor = do_one(ONE_WINS_IN_RACE_SIMPLE_RENAME, SIMPLE_RENAME_STRATEGY)?;
         // Always output the errors to help with troubleshooting
         if dor.errors.len() > 0 {
             println!("Errors...");
@@ -120,7 +119,7 @@ mod simple {
     #[test]
     fn using_rename_with_retry() -> Result<(), std::io::Error> {
         let dor = do_one(
-            "simple-one-wins-in-race-rename-with-retry.txt",
+            ONE_WINS_IN_RACE_SIMPLE_WITH_RETRY,
             RENAME_WITH_RETRY_STRATEGY,
         )?;
         // Always output the errors to help with troubleshooting
@@ -150,7 +149,9 @@ mod tokio {
     use tokio::io::AsyncWriteExt;
     use tokio::task::JoinHandle;
 
-    use crate::common::prepare_target_file;
+    use crate::common::{
+        prepare_target_file, ONE_WINS_IN_RACE_TOKIO_RENAME, ONE_WINS_IN_RACE_TOKIO_WITH_RETRY,
+    };
 
     use super::{DoOneResult, CONTENTS};
 
@@ -199,11 +200,7 @@ mod tokio {
 
     #[tokio::test]
     async fn using_simple_rename() -> Result<(), std::io::Error> {
-        let dor = do_one(
-            "tokio-one-wins-in-race-simple-rename.txt",
-            SIMPLE_RENAME_STRATEGY,
-        )
-        .await?;
+        let dor = do_one(ONE_WINS_IN_RACE_TOKIO_RENAME, SIMPLE_RENAME_STRATEGY).await?;
         // Under Windows the strategy works
         assert!(dor.winner.is_some());
         // POSIX.1-2001 requires the rename to be atomic which implies that, if a single thread is
@@ -224,7 +221,7 @@ mod tokio {
     #[tokio::test]
     async fn using_rename_with_retry() -> Result<(), std::io::Error> {
         let dor = do_one(
-            "tokio-one-wins-in-race-rename-with-retry.txt",
+            ONE_WINS_IN_RACE_TOKIO_WITH_RETRY,
             RENAME_WITH_RETRY_STRATEGY,
         )
         .await?;

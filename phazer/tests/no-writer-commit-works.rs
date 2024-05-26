@@ -15,11 +15,13 @@
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
+use common::{
+    prepare_target_file, NO_WRITER_COMMIT_DEFAULT, NO_WRITER_COMMIT_SIMPLE_RENAME,
+    NO_WRITER_COMMIT_WITH_RETRY,
+};
 use phazer::{Phazer, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY};
 
 mod common;
-
-use crate::common::prepare_target_file;
 
 fn if_error(value: bool, text: &'static str) -> Result<(), std::io::Error> {
     if value {
@@ -50,7 +52,7 @@ where
 
 #[test]
 fn no_writer_commit_using_default_constructor_works() -> Result<(), std::io::Error> {
-    no_writer_commit_works(|p| Phazer::new(p), "both-no-writer-commit.txt")
+    no_writer_commit_works(|p| Phazer::new(p), NO_WRITER_COMMIT_DEFAULT)
 }
 
 #[test]
@@ -62,7 +64,7 @@ fn no_writer_commit_using_simple_rename_works() -> Result<(), std::io::Error> {
                 .path(p)
                 .build()
         },
-        "both-no-writer-commit-simple-rename.txt",
+        NO_WRITER_COMMIT_SIMPLE_RENAME,
     )
 }
 
@@ -75,6 +77,6 @@ fn no_writer_commit_using_rename_with_retry_works() -> Result<(), std::io::Error
                 .path(p)
                 .build()
         },
-        "both-no-writer-commit-rename-with-retry.txt",
+        NO_WRITER_COMMIT_WITH_RETRY,
     )
 }

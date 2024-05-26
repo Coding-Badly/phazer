@@ -33,7 +33,10 @@ mod simple {
 
     use phazer::{Phazer, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY};
 
-    use crate::common::prepare_target_file;
+    use crate::common::{
+        prepare_target_file, WRITE_COMMIT_SIMPLE_DEFAULT, WRITE_COMMIT_SIMPLE_RENAME,
+        WRITE_COMMIT_SIMPLE_WITH_RETRY,
+    };
 
     use super::if_error;
 
@@ -145,7 +148,7 @@ mod simple {
 
     #[test]
     fn write_commit_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>> {
-        write_commit_works(|p| Phazer::new(p), "simple-write-commit-works.txt")
+        write_commit_works(|p| Phazer::new(p), WRITE_COMMIT_SIMPLE_DEFAULT)
     }
 
     #[test]
@@ -157,7 +160,7 @@ mod simple {
                     .path(p)
                     .build()
             },
-            "simple-write-commit-simple-rename-works.txt",
+            WRITE_COMMIT_SIMPLE_RENAME,
         )
     }
 
@@ -170,20 +173,24 @@ mod simple {
                     .path(p)
                     .build()
             },
-            "simple-write-commit-rename-with-retry-works.txt",
+            WRITE_COMMIT_SIMPLE_WITH_RETRY,
         )
     }
 }
 
 #[cfg(all(feature = "tokio", feature = "test_helpers"))]
 mod tokio {
+    use std::io::ErrorKind;
     use std::path::{Path, PathBuf};
 
     use phazer::{Phazer, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY};
     use tokio::fs::{read_to_string, remove_file};
     use tokio::io::AsyncWriteExt;
 
-    use crate::common::prepare_target_file;
+    use crate::common::{
+        prepare_target_file, WRITE_COMMIT_TOKIO_DEFAULT, WRITE_COMMIT_TOKIO_RENAME,
+        WRITE_COMMIT_TOKIO_WITH_RETRY,
+    };
 
     use super::if_error;
 
@@ -240,7 +247,10 @@ mod tokio {
 
         // Ensure the target has the expected data
         let s = read_to_string(&target_path).await?;
-        if_error(s != "first", "target_path file must contain \"first\" ")?;
+        if s != "first" {
+            let text = format!("target_path file must contain \"first\"; instead it contains \"{}\"", s);
+            return Err(std::io::Error::new(ErrorKind::Other, text).into())
+        }
 
         // Do it all again
         let p = phazer_new(&target_path);
@@ -286,7 +296,10 @@ mod tokio {
 
         // Ensure the target has the expected data
         let s = read_to_string(&target_path).await?;
-        if_error(s != "second", "target_path file must contain \"second\" ")?;
+        if s != "second" {
+            let text = format!("target_path file must contain \"second\"; instead it contains \"{}\"", s);
+            return Err(std::io::Error::new(ErrorKind::Other, text).into())
+        }
 
         let _ = remove_file(&target_path).await;
 
@@ -296,7 +309,7 @@ mod tokio {
     #[tokio::test]
     async fn write_commit_using_default_constructor_works() -> Result<(), Box<dyn std::error::Error>>
     {
-        write_commit_works(|p| Phazer::new(p), "tokio-write-commit-works.txt").await
+        write_commit_works(|p| Phazer::new(p), WRITE_COMMIT_TOKIO_DEFAULT).await
     }
 
     #[tokio::test]
@@ -308,7 +321,7 @@ mod tokio {
                     .path(p)
                     .build()
             },
-            "tokio-write-commit-simple-rename-works.txt",
+            WRITE_COMMIT_TOKIO_RENAME,
         )
         .await
     }
@@ -323,7 +336,7 @@ mod tokio {
                     .path(p)
                     .build()
             },
-            "tokio-write-commit-rename-with-retry-works.txt",
+            WRITE_COMMIT_TOKIO_WITH_RETRY,
         )
         .await
     }
