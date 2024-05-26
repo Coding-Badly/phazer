@@ -180,6 +180,7 @@ mod simple {
 
 #[cfg(all(feature = "tokio", feature = "test_helpers"))]
 mod tokio {
+    use std::io::ErrorKind;
     use std::path::{Path, PathBuf};
 
     use phazer::{Phazer, PhazerBuilder, RENAME_WITH_RETRY_STRATEGY, SIMPLE_RENAME_STRATEGY};
@@ -246,7 +247,10 @@ mod tokio {
 
         // Ensure the target has the expected data
         let s = read_to_string(&target_path).await?;
-        if_error(s != "first", "target_path file must contain \"first\" ")?;
+        if s != "first" {
+            let text = format!("target_path file must contain \"first\"; instead it contains \"{}\"", s);
+            return Err(std::io::Error::new(ErrorKind::Other, text).into())
+        }
 
         // Do it all again
         let p = phazer_new(&target_path);
@@ -292,7 +296,10 @@ mod tokio {
 
         // Ensure the target has the expected data
         let s = read_to_string(&target_path).await?;
-        if_error(s != "second", "target_path file must contain \"second\" ")?;
+        if s != "second" {
+            let text = format!("target_path file must contain \"second\"; instead it contains \"{}\"", s);
+            return Err(std::io::Error::new(ErrorKind::Other, text).into())
+        }
 
         let _ = remove_file(&target_path).await;
 
