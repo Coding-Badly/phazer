@@ -156,8 +156,8 @@ mod simple {
         write_commit_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(SIMPLE_RENAME_STRATEGY)
-                    .path(p)
+                    .commit_strategy(SIMPLE_RENAME_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_COMMIT_SIMPLE_RENAME,
@@ -169,8 +169,8 @@ mod simple {
         write_commit_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(RENAME_WITH_RETRY_STRATEGY)
-                    .path(p)
+                    .commit_strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_COMMIT_SIMPLE_WITH_RETRY,
@@ -317,8 +317,8 @@ mod tokio {
         write_commit_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(SIMPLE_RENAME_STRATEGY)
-                    .path(p)
+                    .commit_strategy(SIMPLE_RENAME_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_COMMIT_TOKIO_RENAME,
@@ -332,8 +332,8 @@ mod tokio {
         write_commit_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(RENAME_WITH_RETRY_STRATEGY)
-                    .path(p)
+                    .commit_strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_COMMIT_TOKIO_WITH_RETRY,

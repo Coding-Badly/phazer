@@ -88,6 +88,9 @@ mod inner {
         println!("Dealing with any stragglers...");
         dst.flush().await?;
 
+        println!("Prepare to commit...");
+        drop(dst);
+
         println!("Download finished.  Committing...");
         p.commit()?;
 

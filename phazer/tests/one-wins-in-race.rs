@@ -56,8 +56,8 @@ mod simple {
             for content in CONTENTS.iter() {
                 let tpc = target_path.clone();
                 join_handles.push(s.spawn(move || {
-                    let p = PhazerBuilder::with_path(tpc)
-                        .strategy(commit_strategy)
+                    let p = PhazerBuilder::with_target(tpc)
+                        .commit_strategy(commit_strategy)
                         .build();
                     let mut w = p.simple_writer()?;
                     w.write_all(content.as_bytes())?;
@@ -168,8 +168,8 @@ mod tokio {
         for content in CONTENTS.iter() {
             let tpc = target_path.clone();
             join_handles.push(tokio::spawn(async {
-                let p = PhazerBuilder::with_path(tpc)
-                    .strategy(commit_strategy)
+                let p = PhazerBuilder::with_target(tpc)
+                    .commit_strategy(commit_strategy)
                     .build();
                 let mut w = p.tokio_writer().await?;
                 w.write_all(content.as_bytes()).await?;

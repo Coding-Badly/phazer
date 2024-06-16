@@ -60,8 +60,8 @@ fn no_writer_commit_using_simple_rename_works() -> Result<(), std::io::Error> {
     no_writer_commit_works(
         |p| {
             PhazerBuilder::new()
-                .strategy(SIMPLE_RENAME_STRATEGY)
-                .path(p)
+                .commit_strategy(SIMPLE_RENAME_STRATEGY)
+                .target(p)
                 .build()
         },
         NO_WRITER_COMMIT_SIMPLE_RENAME,
@@ -73,8 +73,8 @@ fn no_writer_commit_using_rename_with_retry_works() -> Result<(), std::io::Error
     no_writer_commit_works(
         |p| {
             PhazerBuilder::new()
-                .strategy(RENAME_WITH_RETRY_STRATEGY)
-                .path(p)
+                .commit_strategy(RENAME_WITH_RETRY_STRATEGY)
+                .target(p)
                 .build()
         },
         NO_WRITER_COMMIT_WITH_RETRY,

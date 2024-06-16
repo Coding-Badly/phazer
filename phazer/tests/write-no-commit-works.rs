@@ -218,8 +218,8 @@ mod simple {
         write_no_commit_no_target_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(SIMPLE_RENAME_STRATEGY)
-                    .path(p)
+                    .commit_strategy(SIMPLE_RENAME_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_NO_COMMIT_NO_TARGET_SIMPLE_RENAME,
@@ -232,8 +232,8 @@ mod simple {
         write_no_commit_no_target_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(RENAME_WITH_RETRY_STRATEGY)
-                    .path(p)
+                    .commit_strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_NO_COMMIT_NO_TARGET_SIMPLE_WITH_RETRY,
@@ -255,8 +255,8 @@ mod simple {
         write_no_commit_have_target_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(SIMPLE_RENAME_STRATEGY)
-                    .path(p)
+                    .commit_strategy(SIMPLE_RENAME_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_NO_COMMIT_HAVE_TARGET_SIMPLE_RENAME,
@@ -269,8 +269,8 @@ mod simple {
         write_no_commit_have_target_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(RENAME_WITH_RETRY_STRATEGY)
-                    .path(p)
+                    .commit_strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_NO_COMMIT_HAVE_TARGET_SIMPLE_WITH_RETRY,
@@ -469,8 +469,8 @@ mod tokio {
         write_no_commit_no_target_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(SIMPLE_RENAME_STRATEGY)
-                    .path(p)
+                    .commit_strategy(SIMPLE_RENAME_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_NO_COMMIT_NO_TARGET_TOKIO_RENAME,
@@ -484,8 +484,8 @@ mod tokio {
         write_no_commit_no_target_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(RENAME_WITH_RETRY_STRATEGY)
-                    .path(p)
+                    .commit_strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_NO_COMMIT_NO_TARGET_TOKIO_WITH_RETRY,
@@ -509,8 +509,8 @@ mod tokio {
         write_no_commit_have_target_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(SIMPLE_RENAME_STRATEGY)
-                    .path(p)
+                    .commit_strategy(SIMPLE_RENAME_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_NO_COMMIT_HAVE_TARGET_TOKIO_RENAME,
@@ -524,8 +524,8 @@ mod tokio {
         write_no_commit_have_target_works(
             |p| {
                 PhazerBuilder::new()
-                    .strategy(RENAME_WITH_RETRY_STRATEGY)
-                    .path(p)
+                    .commit_strategy(RENAME_WITH_RETRY_STRATEGY)
+                    .target(p)
                     .build()
             },
             WRITE_NO_COMMIT_HAVE_TARGET_TOKIO_WITH_RETRY,
