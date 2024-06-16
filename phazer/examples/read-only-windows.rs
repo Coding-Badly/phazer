@@ -81,7 +81,7 @@ mod inner {
 }
 
 #[cfg(not(windows))]
-mod innner {
+mod inner {
     pub fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
         println!("This example is only available for Windows.");
