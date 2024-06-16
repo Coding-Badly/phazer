@@ -36,10 +36,9 @@ mod os {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     let p = os::build_phazer();
 
-    #[cfg(feature="simple")]
+    #[cfg(feature = "simple")]
     {
         use std::io::Write;
 

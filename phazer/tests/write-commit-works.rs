@@ -248,8 +248,11 @@ mod tokio {
         // Ensure the target has the expected data
         let s = read_to_string(&target_path).await?;
         if s != "first" {
-            let text = format!("target_path file must contain \"first\"; instead it contains \"{}\"", s);
-            return Err(std::io::Error::new(ErrorKind::Other, text).into())
+            let text = format!(
+                "target_path file must contain \"first\"; instead it contains \"{}\"",
+                s
+            );
+            return Err(std::io::Error::new(ErrorKind::Other, text).into());
         }
 
         // Do it all again
@@ -297,8 +300,11 @@ mod tokio {
         // Ensure the target has the expected data
         let s = read_to_string(&target_path).await?;
         if s != "second" {
-            let text = format!("target_path file must contain \"second\"; instead it contains \"{}\"", s);
-            return Err(std::io::Error::new(ErrorKind::Other, text).into())
+            let text = format!(
+                "target_path file must contain \"second\"; instead it contains \"{}\"",
+                s
+            );
+            return Err(std::io::Error::new(ErrorKind::Other, text).into());
         }
 
         let _ = remove_file(&target_path).await;

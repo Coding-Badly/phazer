@@ -1,7 +1,7 @@
 # Changelog
 
-## phazer 0.1.3 (pending)
-[v0.1.2...v0.1.3](https://github.com/Coding-Badly/phazer/compare/v0.1.2...v0.1.3)
+## phazer 0.2.0 (2024-06-16)
+[v0.1.2...v0.2.0](https://github.com/Coding-Badly/phazer/compare/v0.1.2...v0.2.0)
 
 ### Added
 
@@ -11,18 +11,23 @@
 - `test_helpers` feature was added to aid with testing.
 - `no-writer-commit-works` test was added to ensure committing without writing returns success.
 - `one-wins-in-race` test was added to ensure committing on multiple threads works.
+- `posix-read-only-works` test was added to ensure read-only targets can be replaced under POSIX operating systems.
 - `write-commit-works` ensures every phase is correct for commit.
 - `write-no-commit-works` ensures every phase is correct for rollback.
+- A few examples.
 
 ### Changed
 
 - Phazer is now tokio::spawn friendly.
 - The working file is now named {stem}.{ext}.phazer-working-{process_id}-{phazer_id}
 - Common test code refactored into the tests/common module.
+- All tests run using GitHub Actions for Linux, macOS, and Windows
+- Significant improvements to the documentation
 
 ### Removed
 
 - All things "bug-001".  The bug is fixed.  The change has been merged into main.
+- Miri tests.
 
 ## phazer 0.1.2 (2023-11-26)
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[cfg(all(windows,feature = "simple"))]
+#[cfg(all(windows, feature = "simple"))]
 mod inner {
     use std::fs::{canonicalize, metadata, set_permissions};
     use std::io::{ErrorKind, Write};
@@ -69,7 +69,7 @@ mod inner {
     }
 }
 
-#[cfg(all(windows,not(feature = "simple")))]
+#[cfg(all(windows, not(feature = "simple")))]
 mod inner {
     pub fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();

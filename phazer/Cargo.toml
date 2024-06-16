@@ -1,6 +1,6 @@
 [package]
 name = "phazer"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Brian Cook (a.k.a Coding-Badly)"]
 license = "Apache-2.0 OR MIT"
 readme = "../README.md"
